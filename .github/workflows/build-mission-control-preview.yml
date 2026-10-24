@@ -39,3 +39,5 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 7
+
+# CI intentionally builds only this isolated preview branch.

@@ -17,6 +17,8 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build:
@@ -41,5 +43,14 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 7
+      - name: Configure isolated GitHub Pages preview
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/
+      - name: Publish isolated preview
+        id: deployment
+        uses: actions/deploy-pages@v4
 
-# CI intentionally builds only this isolated preview branch.
+# CI and Pages deployment intentionally run only for this isolated preview branch.

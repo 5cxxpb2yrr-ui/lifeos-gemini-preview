@@ -18,10 +18,16 @@ concurrency:
 
 jobs:
   build-test:
-    name: Build and test source PR without deploying
+    name: Build and test isolated visual overrides
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      - name: Check out preview configuration
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          path: preview-config
+
       - name: Check out source repository feature branch
         uses: actions/checkout@v4
         with:
@@ -39,14 +45,19 @@ jobs:
         with:
           version: 8.15.0
 
+      - name: Apply isolated preview overrides
+        run: |
+          test -s preview-config/preview-overrides/apps/web/src/index.css
+          cp preview-config/preview-overrides/apps/web/src/index.css source/apps/web/src/index.css
+          echo "Applied preview-only styling; source repository remains unchanged."
+
       - name: Install locked dependencies
         working-directory: source
         run: pnpm install --frozen-lockfile
 
       - name: Set relative asset base for isolated Pages root
         working-directory: source
-        run: |
-          sed -i "s|base: '/lifeos-gemini/'|base: './'|" apps/web/vite.config.ts
+        run: sed -i "s|base: '/lifeos-gemini/'|base: './'|" apps/web/vite.config.ts
 
       - name: Run automated tests
         working-directory: source

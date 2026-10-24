@@ -1,0 +1,68 @@
+name: Audit Mission Control ZIP (isolated)
+
+on:
+  push:
+    branches:
+      - "audit/mission-control-port-20261024"
+    paths:
+      - ".github/workflows/audit-mission-control-zip.yml"
+      - "lifeos-mission-control-ui.zip"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@v4
+
+      - name: Inspect source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f lifeos-mission-control-ui.zip
+          echo "=== Archive listing ==="
+          unzip -l lifeos-mission-control-ui.zip
+          mkdir -p /tmp/mission-control-port
+          unzip -q lifeos-mission-control-ui.zip -d /tmp/mission-control-port
+          echo "=== Extracted file tree ==="
+          find /tmp/mission-control-port -maxdepth 4 -type f | sort | head -250
+          echo "=== Package manifests ==="
+          find /tmp/mission-control-port -name package.json -not -path '*/node_modules/*' -print
+
+      - name: Run available project checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          root=/tmp/mission-control-port
+          manifests="$(find "$root" -name package.json -not -path '*/node_modules/*' -print)"
+          if [ -z "$manifests" ]; then
+            echo "::warning::ZIP contains no package.json; automated JS build/test checks are not available."
+            exit 0
+          fi
+          while IFS= read -r manifest; do
+            dir="$(dirname "$manifest")"
+            echo "=== Checking $dir ==="
+            cd "$dir"
+            node -e 'const p=require("./package.json"); console.log(JSON.stringify({name:p.name,scripts:p.scripts,packageManager:p.packageManager},null,2))'
+            if [ -f pnpm-lock.yaml ]; then
+              corepack enable
+              pnpm install --frozen-lockfile
+              node -e 'const p=require("./package.json"); process.exit(p.scripts?.typecheck?0:1)' && pnpm run typecheck || true
+              node -e 'const p=require("./package.json"); process.exit(p.scripts?.test?0:1)' && pnpm run test || true
+              node -e 'const p=require("./package.json"); process.exit(p.scripts?.build?0:1)' && pnpm run build || true
+            elif [ -f package-lock.json ]; then
+              npm ci
+              node -e 'const p=require("./package.json"); process.exit(p.scripts?.typecheck?0:1)' && npm run typecheck || true
+              node -e 'const p=require("./package.json"); process.exit(p.scripts?.test?0:1)' && npm test -- --run || true
+              node -e 'const p=require("./package.json"); process.exit(p.scripts?.build?0:1)' && npm run build || true
+            else
+              npm install
+              node -e 'const p=require("./package.json"); process.exit(p.scripts?.typecheck?0:1)' && npm run typecheck || true
+              node -e 'const p=require("./package.json"); process.exit(p.scripts?.test?0:1)' && npm test -- --run || true
+              node -e 'const p=require("./package.json"); process.exit(p.scripts?.build?0:1)' && npm run build || true
+            fi
+          done <<< "$manifests"

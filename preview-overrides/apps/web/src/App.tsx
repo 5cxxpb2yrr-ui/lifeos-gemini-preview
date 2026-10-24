@@ -117,6 +117,7 @@ export default function App() {
 
         <div className="mission-section-label"><span>02</span><span>Execute Now</span><span className="mission-section-rule" /></div>
 
+        <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300/80"><span className="rounded-md border border-amber-400/25 bg-amber-400/10 px-2 py-1">Demo example</span><span className="text-slate-500">Not connected personal data</span></div>
         <NextBestActionCard recommendation={nba} onAction={(action) => console.log(action)} />
 
         <div className="mission-section-label"><span>03</span><span>Attention Queue</span><span className="mission-section-rule" /></div>

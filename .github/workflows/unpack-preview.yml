@@ -1,0 +1,48 @@
+name: Unpack preview site
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: preview-branch-publish
+  cancel-in-progress: false
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out preview branch
+        uses: actions/checkout@v4
+        with:
+          ref: preview
+
+      - name: Verify ZIP exists
+        run: |
+          test -f lifeos-gemini-open-loops-preview.zip || {
+            echo "::error::Upload lifeos-gemini-open-loops-preview.zip to the preview branch first."
+            exit 1
+          }
+
+      - name: Unpack built website into branch root
+        run: |
+          mkdir -p unpacked-preview
+          unzip -o lifeos-gemini-open-loops-preview.zip -d unpacked-preview
+          test -s unpacked-preview/index.html
+          test -d unpacked-preview/assets
+          cp -R unpacked-preview/. .
+          rm -rf unpacked-preview lifeos-gemini-open-loops-preview.zip
+
+      - name: Commit site files to preview branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html assets
+          if git diff --cached --quiet; then
+            echo "Preview site files are already up to date."
+            exit 0
+          fi
+          git commit -m "Publish built site to preview branch"
+          git push origin HEAD:preview

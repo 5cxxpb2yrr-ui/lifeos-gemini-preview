@@ -1,6 +1,8 @@
 name: Build isolated LifeOS Gemini preview
 
 on:
+  push:
+    branches: [feat/cyberpunk-phase-1]
   workflow_dispatch:
     inputs:
       publish_preview:

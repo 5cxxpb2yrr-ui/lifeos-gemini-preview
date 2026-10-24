@@ -130,3 +130,5 @@ jobs:
           fi
           git commit -m "Publish validated LifeOS Gemini PR 5 preview"
           git push origin HEAD:preview
+
+# One-time approved isolated preview publication trigger.

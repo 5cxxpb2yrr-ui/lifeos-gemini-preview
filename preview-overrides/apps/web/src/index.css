@@ -359,3 +359,46 @@ main section.mb-5.rounded-3xl {
 @media (prefers-reduced-motion: reduce) {
   .lifeos-capture-fab { transition: none; }
 }
+
+
+/* Phase 1.5 — destination-based navigation (not page-anchor scrolling) */
+.lifeos-nav-item {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+.lifeos-nav-item[aria-current="page"] {
+  color: var(--lifeos-gold);
+  background: rgba(255, 106, 0, .12);
+  box-shadow: inset 0 0 0 1px rgba(255, 106, 0, .22);
+}
+main[data-active-tab="inbox"] #mission > .mx-auto > :not(#inbox):not(.mission-section-label),
+main[data-active-tab="search"] #mission > .mx-auto > :not(#inbox):not(.mission-section-label),
+main[data-active-tab="capture"] #mission > .mx-auto > :not(#capture):not(.mission-section-label),
+main[data-active-tab="entities"] #mission > .mx-auto > :not(#open-loops):not(.mission-section-label) {
+  display: none !important;
+}
+main[data-active-tab="inbox"] #mission > .mx-auto > .mission-section-label:not(:has(+ #inbox)),
+main[data-active-tab="search"] #mission > .mx-auto > .mission-section-label:not(:has(+ #inbox)),
+main[data-active-tab="capture"] #mission > .mx-auto > .mission-section-label:not(:has(+ #capture)),
+main[data-active-tab="entities"] #mission > .mx-auto > .mission-section-label:not(:has(+ #open-loops)) {
+  display: none !important;
+}
+main[data-active-tab="inbox"] #inbox,
+main[data-active-tab="search"] #inbox,
+main[data-active-tab="capture"] #capture,
+main[data-active-tab="entities"] #open-loops {
+  display: block !important;
+}
+main[data-active-tab="search"] #entry-search {
+  border-color: rgba(255, 106, 0, .85) !important;
+  box-shadow: 0 0 0 2px rgba(255, 106, 0, .16);
+}
+main[data-active-tab="inbox"] .lifeos-capture-fab,
+main[data-active-tab="entities"] .lifeos-capture-fab,
+main[data-active-tab="search"] .lifeos-capture-fab,
+main[data-active-tab="capture"] .lifeos-capture-fab {
+  display: none !important;
+}

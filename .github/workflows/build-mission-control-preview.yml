@@ -1,0 +1,41 @@
+name: Build Mission Control preview (isolated)
+
+on:
+  push:
+    branches:
+      - "audit/mission-control-port-20261024"
+    paths:
+      - "package.json"
+      - "tsconfig.json"
+      - "vite.config.ts"
+      - "tailwind.config.js"
+      - "postcss.config.js"
+      - "src/**"
+      - "port/mission-control-ui/**"
+      - "index.html"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm install
+      - name: Typecheck and build
+        run: npm run build
+      - name: Upload static preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifeos-gemini-preview-dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7

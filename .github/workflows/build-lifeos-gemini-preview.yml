@@ -95,7 +95,7 @@ jobs:
   publish-preview:
     name: Publish to this repository's isolated Pages branch
     needs: build-test
-    if: ${{ inputs.publish_preview == true }}
+    if: ${{ inputs.publish_preview == true || (github.event_name == 'push' && github.event.head_commit.message == 'Publish isolated preview now') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

@@ -1,0 +1,111 @@
+name: Build isolated LifeOS Gemini preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_preview:
+        description: "Publish the validated build to this repository's GitHub Pages preview branch"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lifeos-gemini-preview-build
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build and test source PR without deploying
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source repository feature branch
+        uses: actions/checkout@v4
+        with:
+          repository: 5cxxpb2yrr-ui/lifeos-gemini
+          ref: feat/mission-control-integrated-preview
+          path: source
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.0
+
+      - name: Install locked dependencies
+        working-directory: source
+        run: pnpm install --frozen-lockfile
+
+      - name: Set relative asset base for isolated Pages root
+        working-directory: source
+        run: sed -i "s|base: '/lifeos-gemini/'|base: './'|" apps/web/vite.config.ts
+
+      - name: Run automated tests
+        working-directory: source
+        run: pnpm test
+
+      - name: Build workspace
+        working-directory: source
+        run: pnpm build
+
+      - name: Verify static output
+        working-directory: source
+        run: |
+          test -s apps/web/dist/index.html
+          test -d apps/web/dist/assets
+          grep -q './assets/' apps/web/dist/index.html
+          echo "Validated static preview output. No deployment performed."
+
+      - name: Upload validated preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifeos-gemini-pr5-preview
+          path: source/apps/web/dist
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-preview:
+    name: Publish to this repository's isolated Pages branch
+    needs: build-test
+    if: ${{ inputs.publish_preview == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Check out this preview repository's preview branch
+        uses: actions/checkout@v4
+        with:
+          ref: preview
+          path: preview-site
+
+      - name: Download validated artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lifeos-gemini-pr5-preview
+          path: built-site
+
+      - name: Replace only preview branch site files
+        run: |
+          test -s built-site/index.html
+          test -d built-site/assets
+          rm -rf preview-site/assets
+          cp -R built-site/. preview-site/
+          rm -f preview-site/lifeos-gemini-open-loops-preview.zip
+          cd preview-site
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html assets
+          if git diff --cached --quiet; then
+            echo "Preview site already matches validated artifact."
+            exit 0
+          fi
+          git commit -m "Publish validated LifeOS Gemini PR 5 preview"
+          git push origin HEAD:preview

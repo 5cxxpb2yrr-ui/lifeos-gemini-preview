@@ -234,8 +234,26 @@ main button:not([type="submit"]) {
 
 /* Phase 1.2 — functional five-destination mobile navigation */
 .lifeos-bottom-nav {
-  border-top-color: rgba(32, 217, 255, .28);
-  box-shadow: 0 -12px 35px rgba(0, 0, 0, .32);
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: .25rem;
+  width: 100%;
+  max-width: 42rem;
+  margin-inline: auto;
+  padding: .5rem .5rem max(.55rem, env(safe-area-inset-bottom));
+  border: 1px solid rgba(32, 217, 255, .28);
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  background: rgba(2, 6, 23, .98);
+  box-shadow: 0 -12px 35px rgba(0, 0, 0, .48);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  visibility: visible;
+  opacity: 1;
 }
 .lifeos-nav-item {
   display: flex; min-height: 48px; flex-direction: column; align-items: center;
@@ -250,7 +268,7 @@ main button:not([type="submit"]) {
 html { scroll-behavior: smooth; scroll-padding-top: 18px; }
 #capture, #inbox { scroll-margin-bottom: 100px; }
 @media (min-width: 768px) {
-  .lifeos-bottom-nav { bottom: 12px; border: 1px solid rgba(32,217,255,.2); border-radius: 18px; }
+  .lifeos-bottom-nav { bottom: 12px; border: 1px solid rgba(32,217,255,.28); border-radius: 18px; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 

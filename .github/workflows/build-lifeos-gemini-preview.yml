@@ -51,7 +51,11 @@ jobs:
         run: |
           test -s preview-config/preview-overrides/apps/web/src/index.css
           cp preview-config/preview-overrides/apps/web/src/index.css source/apps/web/src/index.css
-          echo "Applied preview-only styling; source repository remains unchanged."
+          if [ -s preview-config/preview-overrides/apps/web/src/App.tsx ]; then
+            cp preview-config/preview-overrides/apps/web/src/App.tsx source/apps/web/src/App.tsx
+            echo "Applied isolated preview app and styling overrides."
+          fi
+          echo "Source repository remains unchanged."
 
       - name: Install locked dependencies
         working-directory: source

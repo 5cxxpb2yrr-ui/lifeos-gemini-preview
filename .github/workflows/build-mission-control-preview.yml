@@ -43,6 +43,8 @@ jobs:
           retention-days: 7
       - name: Configure isolated GitHub Pages preview
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

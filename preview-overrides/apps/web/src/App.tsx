@@ -56,6 +56,16 @@ export default function App() {
     }
   }, [entries]);
 
+  useEffect(() => {
+    if (activeTab === 'search') {
+      document.getElementById('entry-search')?.focus({ preventScroll: true });
+    }
+    if (activeTab === 'capture') {
+      document.getElementById('capture')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('capture-title')?.focus({ preventScroll: true });
+    }
+  }, [activeTab]);
+
   const openEntries = useMemo(() => entries.filter((entry) => !entry.completedAt), [entries]);
   const completedEntries = useMemo(() => entries.filter((entry) => entry.completedAt), [entries]);
   const visibleEntries = useMemo(
@@ -192,14 +202,14 @@ export default function App() {
       type="button"
       className="lifeos-capture-fab"
       aria-label="Jump to Universal Capture"
-      onClick={() => document.getElementById('capture')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+      onClick={() => setActiveTab('capture')}
     ><Plus size={23} /><span>Capture</span></button>
     <nav aria-label="Primary navigation" className="lifeos-bottom-nav" data-testid="lifeos-primary-navigation">
       <button type="button" onClick={() => setActiveTab('mission')} className="lifeos-nav-item" aria-label="Mission" aria-current={activeTab === 'mission' ? 'page' : undefined}><Compass size={19}/><span>Mission</span></button>
       <button type="button" onClick={() => setActiveTab('inbox')} className="lifeos-nav-item" aria-label="Inbox" aria-current={activeTab === 'inbox' ? 'page' : undefined}><Inbox size={19}/><span>Inbox</span></button>
       <button type="button" onClick={() => setActiveTab('entities')} className="lifeos-nav-item" aria-label="System" aria-current={activeTab === 'entities' ? 'page' : undefined}><Network size={19}/><span>System</span></button>
-      <button type="button" onClick={() => { setActiveTab('search'); document.getElementById('entry-search')?.focus(); }} className="lifeos-nav-item" aria-label="Search" aria-current={activeTab === 'search' ? 'page' : undefined}><Search size={19}/><span>Search</span></button>
-      <button type="button" onClick={() => { setActiveTab('capture'); document.getElementById('capture-title')?.focus(); }} className="lifeos-nav-item" aria-label="Capture" aria-current={activeTab === 'capture' ? 'page' : undefined}><MoreHorizontal size={19}/><span>Capture</span></button>
+      <button type="button" onClick={() => setActiveTab('search')} className="lifeos-nav-item" aria-label="Search" aria-current={activeTab === 'search' ? 'page' : undefined}><Search size={19}/><span>Search</span></button>
+      <button type="button" onClick={() => setActiveTab('capture')} className="lifeos-nav-item" aria-label="Capture" aria-current={activeTab === 'capture' ? 'page' : undefined}><MoreHorizontal size={19}/><span>Capture</span></button>
     </nav>
     </>
   );

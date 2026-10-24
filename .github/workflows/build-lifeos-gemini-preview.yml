@@ -134,3 +134,5 @@ jobs:
 # One-time approved isolated preview publication trigger.
 
 # Rebuild and publish the explicitly approved isolated preview when triggered by the publish commit.
+
+# Ensure the JSX correction is rebuilt and republished in the isolated preview.

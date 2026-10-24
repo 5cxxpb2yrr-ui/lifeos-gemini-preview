@@ -132,3 +132,5 @@ jobs:
           git push origin HEAD:preview
 
 # One-time approved isolated preview publication trigger.
+
+# Rebuild and publish the explicitly approved isolated preview when triggered by the publish commit.

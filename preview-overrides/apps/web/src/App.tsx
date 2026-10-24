@@ -96,29 +96,9 @@ export default function App() {
           </div>
         </header>
 
-        <NextBestActionCard recommendation={nba} onAction={(action) => console.log(action)} />
-        <OpenLoopsDashboard />
+        <div className="mission-section-label"><span>01</span><span>System Load</span><span className="mission-section-rule" /></div>
 
-        <section id="capture" className="mb-5 rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-400/[0.12] via-slate-900 to-slate-950 p-5 shadow-[0_0_38px_rgba(245,158,11,0.08)] sm:p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-400/15 text-amber-300"><Plus size={19} /></span>
-            <div>
-              <h2 className="font-bold">Universal Capture</h2>
-              <p className="text-xs text-slate-400">Get it out of your head. Organize it later.</p>
-            </div>
-          </div>
-          <form onSubmit={capture} className="space-y-3">
-            <label className="sr-only" htmlFor="capture-title">What do you want to capture?</label>
-            <input id="capture-title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Add a task, question, idea, or follow-up…" maxLength={240} className="min-h-12 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-base text-white outline-none placeholder:text-slate-500 focus:border-amber-400/70 focus:ring-2 focus:ring-amber-400/15" />
-            <div className="flex gap-2">
-              <label className="sr-only" htmlFor="capture-type">Entry type</label>
-              <select id="capture-type" value={type} onChange={(event) => setType(event.target.value as EntryType)} className="min-h-12 min-w-0 flex-1 rounded-2xl border border-white/10 bg-slate-900 px-3 text-sm text-slate-200 outline-none focus:border-amber-400/70">
-                {entryTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-              </select>
-              <button type="submit" disabled={!title.trim()} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-amber-400 px-5 font-bold text-slate-950 transition hover:bg-amber-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"><Plus size={17} /> Capture</button>
-            </div>
-          </form>
-        </section>
+        <OpenLoopsDashboard />
 
         <section className="mb-5 grid grid-cols-2 gap-3">
           <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
@@ -132,6 +112,12 @@ export default function App() {
             <p className="mt-1 text-xs text-slate-500">Closed loops</p>
           </div>
         </section>
+
+        <div className="mission-section-label"><span>02</span><span>Execute Now</span><span className="mission-section-rule" /></div>
+
+        <NextBestActionCard recommendation={nba} onAction={(action) => console.log(action)} />
+
+        <div className="mission-section-label"><span>03</span><span>Attention Queue</span><span className="mission-section-rule" /></div>
 
         <section id="inbox" className="overflow-hidden rounded-3xl border border-white/10 bg-slate-900/70">
           <div className="border-b border-white/[0.08] p-4 sm:p-5">
@@ -171,6 +157,29 @@ export default function App() {
               ))}
             </ul>
           )}
+        </section>
+
+        <div className="mission-section-label"><span>04</span><span>Capture</span><span className="mission-section-rule" /></div>
+
+        <section id="capture" className="mb-5 rounded-3xl border border-amber-400/30 bg-gradient-to-br from-amber-400/[0.12] via-slate-900 to-slate-950 p-5 shadow-[0_0_38px_rgba(245,158,11,0.08)] sm:p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-amber-400/15 text-amber-300"><Plus size={19} /></span>
+            <div>
+              <h2 className="font-bold">Universal Capture</h2>
+              <p className="text-xs text-slate-400">Get it out of your head. Organize it later.</p>
+            </div>
+          </div>
+          <form onSubmit={capture} className="space-y-3">
+            <label className="sr-only" htmlFor="capture-title">What do you want to capture?</label>
+            <input id="capture-title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Add a task, question, idea, or follow-up…" maxLength={240} className="min-h-12 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-base text-white outline-none placeholder:text-slate-500 focus:border-amber-400/70 focus:ring-2 focus:ring-amber-400/15" />
+            <div className="flex gap-2">
+              <label className="sr-only" htmlFor="capture-type">Entry type</label>
+              <select id="capture-type" value={type} onChange={(event) => setType(event.target.value as EntryType)} className="min-h-12 min-w-0 flex-1 rounded-2xl border border-white/10 bg-slate-900 px-3 text-sm text-slate-200 outline-none focus:border-amber-400/70">
+                {entryTypes.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
+              <button type="submit" disabled={!title.trim()} className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-amber-400 px-5 font-bold text-slate-950 transition hover:bg-amber-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"><Plus size={17} /> Capture</button>
+            </div>
+          </form>
         </section>
 
         <p className="mx-auto mt-5 max-w-md text-center text-[11px] leading-relaxed text-slate-500">Saved in this browser on this device. This is a local-first MVP, not yet synced to a LifeOS graph or account.</p>

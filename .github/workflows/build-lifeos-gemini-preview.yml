@@ -59,7 +59,8 @@ jobs:
 
       - name: Set relative asset base for isolated Pages root
         working-directory: source
-        run: sed -i "s|base: '/lifeos-gemini/'|base: './'|" apps/web/vite.config.ts
+        run: |
+          sed -i "s|base: '/lifeos-gemini/'|base: './'|" apps/web/vite.config.ts
 
       - name: Run automated tests
         working-directory: source

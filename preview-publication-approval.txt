@@ -1,0 +1,3 @@
+User-approved isolated publication of the validated LifeOS Gemini preview.
+Scope: lifeos-gemini-preview repository, preview branch only.
+No canonical merge, production deployment, or graph sync.

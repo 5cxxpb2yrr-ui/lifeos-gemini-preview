@@ -82,6 +82,7 @@ export default function App() {
   const today = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date());
 
   return (
+    <>
     <main id="mission" className="min-h-screen px-4 pb-32 pt-[max(1.25rem,env(safe-area-inset-top))] text-slate-100 sm:px-6">
       <div className="mx-auto max-w-2xl">
         <header className="mb-7 flex items-start justify-between gap-3">
@@ -192,5 +193,6 @@ export default function App() {
       <a href="#entry-search" className="lifeos-nav-item" aria-label="Search"><Search size={19}/><span>Search</span></a>
       <a href="#capture" className="lifeos-nav-item" aria-label="More"><MoreHorizontal size={19}/><span>More</span></a>
     </nav>
+    </>
   );
 }

@@ -186,6 +186,12 @@ export default function App() {
         <p className="mx-auto mt-5 max-w-md text-center text-[11px] leading-relaxed text-slate-500">Saved in this browser on this device. This is a local-first MVP, not yet synced to a LifeOS graph or account.</p>
       </div>
     </main>
+    <button
+      type="button"
+      className="lifeos-capture-fab"
+      aria-label="Jump to Universal Capture"
+      onClick={() => document.getElementById('capture')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+    ><Plus size={23} /><span>Capture</span></button>
     <nav aria-label="Primary navigation" className="lifeos-bottom-nav" data-testid="lifeos-primary-navigation">
       <a href="#mission" className="lifeos-nav-item" aria-label="Mission"><Compass size={19}/><span>Mission</span></a>
       <a href="#inbox" className="lifeos-nav-item" aria-label="Inbox"><Inbox size={19}/><span>Inbox</span></a>

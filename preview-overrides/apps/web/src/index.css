@@ -124,3 +124,110 @@ main button[type="submit"]:active {
     to { opacity: 1; transform: translateY(0); }
   }
 }
+
+
+/* Phase 1.1 — mobile readability, focus visibility, and hierarchy */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
+
+body, input, select, button {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+h1, h2, h3, header p:first-child, main section p.uppercase {
+  font-family: Orbitron, "Arial Narrow", sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--lifeos-gold);
+  outline-offset: 3px;
+}
+
+main header > div:last-child {
+  border-color: rgba(32, 217, 255, .28);
+  background: linear-gradient(145deg, rgba(32, 217, 255, .08), rgba(7, 12, 24, .78));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+main section.grid > div {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(32, 217, 255, .2);
+  background: linear-gradient(145deg, rgba(14, 27, 46, .86), rgba(5, 9, 18, .88));
+}
+
+main section.grid > div:first-child p.text-3xl {
+  color: var(--lifeos-gold);
+  text-shadow: 0 0 18px rgba(255, 213, 79, .16);
+}
+
+main section.grid > div:last-child p.text-3xl {
+  color: #5ee7b7;
+}
+
+main section.overflow-hidden.rounded-3xl {
+  border-color: rgba(32, 217, 255, .24);
+  background: rgba(6, 12, 24, .9);
+}
+
+main section.overflow-hidden.rounded-3xl li {
+  transition: background-color .18s ease;
+}
+
+main section.overflow-hidden.rounded-3xl li:active {
+  background: rgba(32, 217, 255, .055);
+}
+
+main section.overflow-hidden.rounded-3xl button[aria-label] {
+  min-width: 28px;
+  min-height: 28px;
+}
+
+main input, main select, main button {
+  -webkit-appearance: none;
+}
+
+main input, main select {
+  border-radius: 14px;
+}
+
+main button:not([type="submit"]) {
+  transition: border-color .18s ease, background-color .18s ease, color .18s ease;
+}
+
+@media (max-width: 480px) {
+  main {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  main header {
+    margin-bottom: 1.25rem !important;
+  }
+
+  main header h1 {
+    font-size: clamp(1.8rem, 9vw, 2.25rem);
+  }
+
+  main section.mb-5.rounded-3xl {
+    padding: 1rem !important;
+    border-radius: 1.35rem !important;
+  }
+
+  main section.grid > div {
+    padding: .85rem !important;
+    border-radius: 1.15rem !important;
+  }
+
+  main section.overflow-hidden.rounded-3xl > div:first-child {
+    padding: 1rem !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

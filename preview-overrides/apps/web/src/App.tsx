@@ -46,6 +46,7 @@ export default function App() {
   const [type, setType] = useState<EntryType>('task');
   const [query, setQuery] = useState('');
   const [showCompleted, setShowCompleted] = useState(false);
+  const [activeTab, setActiveTab] = useState<'mission' | 'inbox' | 'entities' | 'search' | 'capture'>('mission');
 
   useEffect(() => {
     try {
@@ -83,7 +84,7 @@ export default function App() {
 
   return (
     <>
-    <main id="mission" className="min-h-screen px-4 pb-32 pt-[max(1.25rem,env(safe-area-inset-top))] text-slate-100 sm:px-6">
+    <main id="mission" data-active-tab={activeTab} className="min-h-screen px-4 pb-32 pt-[max(1.25rem,env(safe-area-inset-top))] text-slate-100 sm:px-6">
       <div className="mx-auto max-w-2xl">
         <header className="mb-7 flex items-start justify-between gap-3">
           <div>
@@ -193,11 +194,11 @@ export default function App() {
       onClick={() => document.getElementById('capture')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
     ><Plus size={23} /><span>Capture</span></button>
     <nav aria-label="Primary navigation" className="lifeos-bottom-nav" data-testid="lifeos-primary-navigation">
-      <a href="#mission" className="lifeos-nav-item" aria-label="Mission"><Compass size={19}/><span>Mission</span></a>
-      <a href="#inbox" className="lifeos-nav-item" aria-label="Inbox"><Inbox size={19}/><span>Inbox</span></a>
-      <a href="#open-loops" className="lifeos-nav-item" aria-label="Entities"><Network size={19}/><span>Entities</span></a>
-      <a href="#entry-search" className="lifeos-nav-item" aria-label="Search"><Search size={19}/><span>Search</span></a>
-      <a href="#capture" className="lifeos-nav-item" aria-label="More"><MoreHorizontal size={19}/><span>More</span></a>
+      <button type="button" onClick={() => setActiveTab('mission')} className="lifeos-nav-item" aria-label="Mission" aria-current={activeTab === 'mission' ? 'page' : undefined}><Compass size={19}/><span>Mission</span></button>
+      <button type="button" onClick={() => setActiveTab('inbox')} className="lifeos-nav-item" aria-label="Inbox" aria-current={activeTab === 'inbox' ? 'page' : undefined}><Inbox size={19}/><span>Inbox</span></button>
+      <button type="button" onClick={() => setActiveTab('entities')} className="lifeos-nav-item" aria-label="Entities" aria-current={activeTab === 'entities' ? 'page' : undefined}><Network size={19}/><span>Entities</span></button>
+      <button type="button" onClick={() => { setActiveTab('search'); document.getElementById('entry-search')?.focus(); }} className="lifeos-nav-item" aria-label="Search" aria-current={activeTab === 'search' ? 'page' : undefined}><Search size={19}/><span>Search</span></button>
+      <button type="button" onClick={() => { setActiveTab('capture'); document.getElementById('capture-title')?.focus(); }} className="lifeos-nav-item" aria-label="Capture" aria-current={activeTab === 'capture' ? 'page' : undefined}><MoreHorizontal size={19}/><span>Capture</span></button>
     </nav>
     </>
   );

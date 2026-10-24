@@ -5,6 +5,7 @@ on:
     branches:
       - "audit/mission-control-port-20261024"
     paths:
+      - ".github/workflows/build-mission-control-preview.yml"
       - "package.json"
       - "tsconfig.json"
       - "vite.config.ts"

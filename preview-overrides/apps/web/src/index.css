@@ -231,3 +231,25 @@ main button:not([type="submit"]) {
     transition-duration: .01ms !important;
   }
 }
+
+/* Phase 1.2 — functional five-destination mobile navigation */
+.lifeos-bottom-nav {
+  border-top-color: rgba(32, 217, 255, .28);
+  box-shadow: 0 -12px 35px rgba(0, 0, 0, .32);
+}
+.lifeos-nav-item {
+  display: flex; min-height: 48px; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px; border-radius: 12px; color: #91a7bd;
+  font-size: 10px; font-weight: 700; letter-spacing: .025em; text-decoration: none;
+  transition: color .16s ease, background-color .16s ease;
+}
+.lifeos-nav-item:hover, .lifeos-nav-item:focus-visible {
+  color: var(--lifeos-gold); background: rgba(32, 217, 255, .07);
+}
+.lifeos-nav-item:focus-visible { outline: 2px solid var(--lifeos-gold); outline-offset: -2px; }
+html { scroll-behavior: smooth; scroll-padding-top: 18px; }
+#capture, #inbox { scroll-margin-bottom: 100px; }
+@media (min-width: 768px) {
+  .lifeos-bottom-nav { bottom: 12px; border: 1px solid rgba(32,217,255,.2); border-radius: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

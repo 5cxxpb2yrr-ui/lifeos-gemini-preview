@@ -307,3 +307,55 @@ html { scroll-behavior: smooth; scroll-padding-top: 18px; }
 @media (max-width: 480px) {
   .mission-section-label { margin-top: 1.15rem; font-size: .62rem; }
 }
+
+
+/* Phase 1.4 — focused, mobile-first Mission Control polish */
+.lifeos-capture-fab {
+  position: fixed;
+  right: max(1rem, calc((100vw - 42rem) / 2 + 1rem));
+  bottom: calc(5.8rem + env(safe-area-inset-bottom));
+  z-index: 10000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  min-height: 3.1rem;
+  padding: 0 1rem;
+  border: 1px solid rgba(255, 213, 79, .72);
+  border-radius: 999px;
+  background: linear-gradient(120deg, #ff6a00, #ffd54f);
+  color: #160c03;
+  font-size: .78rem;
+  font-weight: 800;
+  box-shadow: 0 8px 28px rgba(255, 106, 0, .28), 0 0 0 5px rgba(255, 106, 0, .07);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.lifeos-capture-fab:active {
+  transform: scale(.96);
+  box-shadow: 0 4px 15px rgba(255, 106, 0, .22);
+}
+.lifeos-bottom-nav {
+  border-color: rgba(255, 106, 0, .2);
+  background: rgba(5, 8, 17, .94);
+}
+.lifeos-nav-item[aria-current="page"] {
+  color: var(--lifeos-gold);
+  background: rgba(255, 106, 0, .09);
+}
+main section.rounded-3xl {
+  border-radius: 1.25rem;
+}
+main section.mb-5.rounded-3xl {
+  box-shadow: 0 0 28px rgba(255, 106, 0, .11), inset 0 1px 0 rgba(255, 213, 79, .08);
+}
+@media (max-width: 480px) {
+  .lifeos-capture-fab {
+    right: 1rem;
+    bottom: calc(5.75rem + env(safe-area-inset-bottom));
+  }
+  .lifeos-nav-item { min-height: 46px; }
+  main section.mb-5.rounded-3xl { margin-bottom: 1rem !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lifeos-capture-fab { transition: none; }
+}

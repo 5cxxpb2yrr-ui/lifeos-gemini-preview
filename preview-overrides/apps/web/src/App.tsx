@@ -184,13 +184,13 @@ export default function App() {
 
         <p className="mx-auto mt-5 max-w-md text-center text-[11px] leading-relaxed text-slate-500">Saved in this browser on this device. This is a local-first MVP, not yet synced to a LifeOS graph or account.</p>
       </div>
-      <nav aria-label="Primary navigation" className="lifeos-bottom-nav fixed inset-x-0 bottom-0 z-50 mx-auto grid max-w-2xl grid-cols-5 gap-1 border-t border-cyan-300/20 bg-slate-950/95 px-2 pb-[max(.55rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl">
-        <a href="#mission" className="lifeos-nav-item" aria-label="Mission"><Compass size={19}/><span>Mission</span></a>
-        <a href="#inbox" className="lifeos-nav-item" aria-label="Inbox"><Inbox size={19}/><span>Inbox</span></a>
-        <a href="#open-loops" className="lifeos-nav-item" aria-label="Entities"><Network size={19}/><span>Entities</span></a>
-        <a href="#entry-search" className="lifeos-nav-item" aria-label="Search"><Search size={19}/><span>Search</span></a>
-        <a href="#capture" className="lifeos-nav-item" aria-label="More"><MoreHorizontal size={19}/><span>More</span></a>
-      </nav>
     </main>
+    <nav aria-label="Primary navigation" className="lifeos-bottom-nav" data-testid="lifeos-primary-navigation">
+      <a href="#mission" className="lifeos-nav-item" aria-label="Mission"><Compass size={19}/><span>Mission</span></a>
+      <a href="#inbox" className="lifeos-nav-item" aria-label="Inbox"><Inbox size={19}/><span>Inbox</span></a>
+      <a href="#open-loops" className="lifeos-nav-item" aria-label="Entities"><Network size={19}/><span>Entities</span></a>
+      <a href="#entry-search" className="lifeos-nav-item" aria-label="Search"><Search size={19}/><span>Search</span></a>
+      <a href="#capture" className="lifeos-nav-item" aria-label="More"><MoreHorizontal size={19}/><span>More</span></a>
+    </nav>
   );
 }

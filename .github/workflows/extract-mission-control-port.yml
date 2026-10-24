@@ -1,0 +1,46 @@
+name: Extract Mission Control port (isolated branch)
+
+on:
+  push:
+    branches:
+      - "audit/mission-control-port-20261024"
+    paths:
+      - ".github/workflows/extract-mission-control-port.yml"
+      - "lifeos-mission-control-ui.zip"
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@v4
+
+      - name: Extract source files into reviewable folder
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p port/mission-control-ui
+          unzip -oq lifeos-mission-control-ui.zip -d port/mission-control-ui
+          echo "Extracted files:"
+          find port/mission-control-ui -type f | sort
+          test -f port/mission-control-ui/apps/web/src/App.tsx
+          test -f port/mission-control-ui/apps/web/src/lib/scoring.ts
+
+      - name: Commit extracted source to this isolated branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add port/mission-control-ui
+          if git diff --cached --quiet; then
+            echo "No extracted source changes to commit."
+            exit 0
+          fi
+          git commit -m "Extract Mission Control UI port for review"
+          git push origin HEAD

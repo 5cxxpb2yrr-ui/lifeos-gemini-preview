@@ -76,7 +76,7 @@ export default function App() {
           <Search items={searchable} onOpen={(id) => { setCaptureOpen(false); if (id.startsWith('open-') || id.startsWith('completed-') || id.startsWith('archived-')) setTab('inbox'); else if (id.startsWith('person-') || id.startsWith('entity-')) setTab('entities'); else setTab('mission'); }} />
         </section>
       </div>}
-      <BottomNavigation tab={tab} onChange={(nextTab) => { if (nextTab === 'search') setCaptureOpen(true); else setTab(nextTab); }} />
+      <BottomNavigation tab={tab} inboxCount={inbox.length} onChange={(nextTab) => { if (nextTab === 'search') setCaptureOpen(true); else setTab(nextTab); }} />
     </div>
   );
 }

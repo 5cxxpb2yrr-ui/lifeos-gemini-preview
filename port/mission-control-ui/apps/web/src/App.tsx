@@ -27,7 +27,8 @@ const entities: Entity[] = [
 export default function App() {
   const [tab, setTab] = useState<Tab>('mission');
   const [draft, setDraft] = useState('');
-  const [captureOpen, setCaptureOpen] = useState(false);\n  const [detailRec, setDetailRec] = useState<Rec | null>(null);
+  const [captureOpen, setCaptureOpen] = useState(false);
+  const [detailRec, setDetailRec] = useState<Rec | null>(null);
   const { inbox, archive, completed, capture } = useStore();
   const searchable: Searchable[] = [
     ...[nba, reg, ins, esc].map((r) => ({ id: `rec-${r.id}`, title: r.title, subtitle: `Example recommendation · ${r.entity}` })),

@@ -31,13 +31,17 @@ export default function App() {
   const [detailRec, setDetailRec] = useState<Rec | null>(null);
   const { inbox, archive, completed, capture } = useStore();
   const searchable: Searchable[] = [
-    ...[nba, reg, ins, esc].map((r) => ({ id: `rec-${r.id}`, title: r.title, subtitle: `Example recommendation · ${r.entity}` })),
-    ...people.map((p) => ({ id: `person-${p.id}`, title: p.name, subtitle: 'Person' })),
-    ...entities.map((entity) => ({ id: `entity-${entity.id}`, title: entity.name, subtitle: `${entity.type} · example data` })),
-    ...inbox.map((item) => ({ id: `open-${item.id}`, title: item.text, subtitle: 'Open loop' })),
-    ...completed.map((item) => ({ id: `completed-${item.id}`, title: item.text, subtitle: 'Completed loop' })),
-    ...archive.map((item) => ({ id: `archived-${item.id}`, title: item.text, subtitle: 'Archived loop' })),
+    ...[nba, reg, ins, esc].map((r) => ({ id: `rec-${r.id}`, title: r.title, subtitle: `Example recommendation · ${r.entity}`, destination: 'mission' as const })),
+    ...people.map((p) => ({ id: `person-${p.id}`, title: p.name, subtitle: 'Person', destination: 'entities' as const })),
+    ...entities.map((entity) => ({ id: `entity-${entity.id}`, title: entity.name, subtitle: `${entity.type} · example data`, destination: 'entities' as const })),
+    ...inbox.map((item) => ({ id: `open-${item.id}`, title: item.text, subtitle: 'Open loop', destination: 'inbox' as const })),
+    ...completed.map((item) => ({ id: `completed-${item.id}`, title: item.text, subtitle: 'Completed loop', destination: 'inbox' as const })),
+    ...archive.map((item) => ({ id: `archived-${item.id}`, title: item.text, subtitle: 'Archived loop', destination: 'inbox' as const })),
   ];
+  const openSearchResult = (id: string) => {
+    const result = searchable.find((item) => item.id === id);
+    if (result) setTab(result.destination);
+  };
   const submitCapture = (e: React.FormEvent) => {
     e.preventDefault();
     if (!draft.trim()) return;
@@ -60,11 +64,7 @@ export default function App() {
         </>)}
         {tab === 'inbox' && <Inbox people={people} />}
         {tab === 'entities' && <Entities entities={entities} />}
-        {tab === 'search' && <Search items={searchable} onOpen={(id) => {
-          if (id.startsWith('open-') || id.startsWith('completed-') || id.startsWith('archived-')) setTab('inbox');
-          else if (id.startsWith('person-') || id.startsWith('entity-')) setTab('entities');
-          else setTab('mission');
-        }} />}
+        {tab === 'search' && <Search items={searchable} onOpen={openSearchResult} />}
         {tab === 'more' && <More />}
       </main>
       {detailRec && <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/75 p-3 backdrop-blur-sm sm:items-center" onClick={(e) => { if (e.target === e.currentTarget) setDetailRec(null); }}>
@@ -83,7 +83,7 @@ export default function App() {
             <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} aria-label="Capture a task, thought, or follow-up" placeholder="What needs your attention?" className="min-h-12 min-w-0 flex-1 rounded-2xl border border-[var(--line)] bg-[var(--bg)] px-4 text-[var(--text)] outline-none focus:border-[var(--amber)]" />
             <button type="submit" className="min-h-12 rounded-2xl bg-[var(--amber)] px-4 font-bold text-black">Add</button>
           </form>
-          <Search items={searchable} onOpen={(id) => { setCaptureOpen(false); if (id.startsWith('open-') || id.startsWith('completed-') || id.startsWith('archived-')) setTab('inbox'); else if (id.startsWith('person-') || id.startsWith('entity-')) setTab('entities'); else setTab('mission'); }} />
+          <Search items={searchable} onOpen={(id) => { setCaptureOpen(false); openSearchResult(id); }} />
         </section>
       </div>}
       <BottomNavigation tab={tab} inboxCount={inbox.length} onChange={(nextTab) => { if (nextTab === 'search') setCaptureOpen(true); else setTab(nextTab); }} />

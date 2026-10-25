@@ -84,13 +84,13 @@ jobs:
       - name: Check out this preview repository's preview branch
         uses: actions/checkout@v4
         with:
-          ref: preview
+          ref: audit/mission-control-port-20261024
           path: preview-site
 
       - name: Download validated artifact
         uses: actions/download-artifact@v4
         with:
-          name: lifeos-gemini-pr5-preview
+          name: lifeos-gemini-pr8-backup-preview
           path: built-site
 
       - name: Replace only preview branch site files
@@ -109,4 +109,4 @@ jobs:
             exit 0
           fi
           git commit -m "Publish validated LifeOS Gemini PR 8 backup preview"
-          git push origin HEAD:preview
+          git push origin HEAD:audit/mission-control-port-20261024

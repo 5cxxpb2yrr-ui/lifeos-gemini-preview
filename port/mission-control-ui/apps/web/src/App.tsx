@@ -31,9 +31,12 @@ export default function App() {
   const { inbox, archive, completed, capture, completeAt, archiveAt } = useStore();
   const filtered = inbox.map((text, index) => ({ text, index })).filter((item) => item.text.toLowerCase().includes(query.toLowerCase()));
   const searchable: Searchable[] = [
-    ...[nba, reg, ins, esc].map((r) => ({ id: r.id, title: r.title, subtitle: r.entity })),
-    ...people.map((p) => ({ id: p.id, title: p.name, subtitle: 'Person' })),
-    ...inbox.map((item, index) => ({ id: `loop-${index}`, title: item, subtitle: 'Open loop' })),
+    ...[nba, reg, ins, esc].map((r) => ({ id: `rec-${r.id}`, title: r.title, subtitle: `Example recommendation · ${r.entity}` })),
+    ...people.map((p) => ({ id: `person-${p.id}`, title: p.name, subtitle: 'Person' })),
+    ...entities.map((entity) => ({ id: `entity-${entity.id}`, title: entity.name, subtitle: `${entity.type} · example data` })),
+    ...inbox.map((item, index) => ({ id: `open-${index}`, title: item, subtitle: 'Open loop' })),
+    ...completed.map((item, index) => ({ id: `completed-${index}`, title: item, subtitle: 'Completed loop' })),
+    ...archive.map((item, index) => ({ id: `archived-${index}`, title: item, subtitle: 'Archived loop' })),
   ];
   const submitCapture = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +68,7 @@ export default function App() {
             <input value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Filter open loops" placeholder="Filter your open loops…" className="mb-3 min-h-10 w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 text-[var(--text)]" />
             {filtered.length ? <ul className="space-y-2">{filtered.slice(0,5).map(({text,index}) => <li key={index} className="flex items-center gap-2 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-3"><span className="min-w-0 flex-1 break-words">{text}</span><button aria-label={`Complete ${text}`} onClick={() => completeAt(index)} className="min-h-9 rounded-xl border border-[var(--line)] px-3 text-xs font-semibold text-[var(--amber)]">Done</button><button aria-label={`Archive ${text}`} onClick={() => archiveAt(index)} className="min-h-9 rounded-xl px-2 text-xs text-[var(--text-2)]">Archive</button></li>)}</ul> : <p className="rounded-2xl border border-dashed border-[var(--line)] p-5 text-center text-sm text-[var(--text-2)]">No open loops yet. Capture something above to make this dashboard yours.</p>}
           </section>
+          <p className="mb-3 rounded-xl border border-[var(--line)] px-3 py-2 text-xs text-[var(--text-2)]">Demo recommendations below are illustrative examples, not live account data.</p>
           <div className="mb-3"><NextBestActionCard rec={nba} /></div>
           <Section><RecommendationCard rec={reg} label="⚡ EXECUTE NOW" /><RecommendationCard rec={ins} variant="decision" label="DECISIONS REQUIRED" /></Section>
           <Section full><RecommendationCard rec={esc} variant="risk" label="⚠ AT RISK" /></Section>
@@ -72,7 +76,11 @@ export default function App() {
         </>)}
         {tab === 'inbox' && <Inbox people={people} />}
         {tab === 'entities' && <Entities entities={entities} />}
-        {tab === 'search' && <Search items={searchable} />}
+        {tab === 'search' && <Search items={searchable} onOpen={(id) => {
+          if (id.startsWith('open-') || id.startsWith('completed-') || id.startsWith('archived-')) setTab('inbox');
+          else if (id.startsWith('person-') || id.startsWith('entity-')) setTab('entities');
+          else setTab('mission');
+        }} />}
         {tab === 'more' && <More />}
       </main>
       <BottomNavigation tab={tab} onChange={setTab} />

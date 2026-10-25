@@ -6,7 +6,7 @@ export function NextBestActionCard({ rec, onAction, compact = false, onExpand }:
   rec: Rec; onAction?: (id: string, action: string) => void; compact?: boolean; onExpand?: () => void;
 }) {
   return (
-    <section className="rounded-2xl border border-[#3B82F680] bg-gradient-to-b from-[#12244a] to-[var(--surface-1)] p-3 shadow-[0_0_20px_#3B82F622]">
+    <section onClick={compact ? onExpand : undefined} onKeyDown={(e) => { if (compact && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onExpand?.(); } }} role={compact ? 'button' : undefined} tabIndex={compact ? 0 : undefined} className={`rounded-2xl border border-[#3B82F680] bg-gradient-to-b from-[#12244a] to-[var(--surface-1)] p-3 shadow-[0_0_20px_#3B82F622] ${compact ? 'cursor-pointer hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--blue)]' : ''}`}>
       <header className="mb-1 flex items-center justify-between gap-2 text-[10px] font-bold tracking-wide text-[var(--blue)]">
         <span>✦ NEXT BEST ACTION</span><span>{band(rec.impact)} impact</span>
       </header>
@@ -24,7 +24,6 @@ export function NextBestActionCard({ rec, onAction, compact = false, onExpand }:
           ))}
         </div>
       </>}
-      {compact && <button type="button" onClick={onExpand} className="mt-2 min-h-9 w-full rounded-xl border border-[#3B82F680] px-3 text-xs font-semibold text-[var(--blue)]">Open action details ↗</button>}
     </section>
   );
 }

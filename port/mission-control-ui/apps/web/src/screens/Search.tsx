@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
-export interface Searchable { id: string; title: string; subtitle?: string }
+export type SearchDestination = 'mission' | 'inbox' | 'entities';
+export interface Searchable { id: string; title: string; subtitle?: string; destination: SearchDestination }
 
 export function Search({ items, onOpen }: { items: Searchable[]; onOpen?: (id: string) => void }) {
   const [q, setQ] = useState('');

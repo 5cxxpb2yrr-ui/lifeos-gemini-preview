@@ -27,10 +27,8 @@ const entities: Entity[] = [
 export default function App() {
   const [tab, setTab] = useState<Tab>('mission');
   const [draft, setDraft] = useState('');
-  const [query, setQuery] = useState('');
-  const [summaryView, setSummaryView] = useState<'completed' | 'archived' | null>(null);
-  const { inbox, archive, completed, capture, completeAt, archiveAt } = useStore();
-  const filtered = inbox.map((text, index) => ({ text, index })).filter((item) => item.text.toLowerCase().includes(query.toLowerCase()));
+  const [captureOpen, setCaptureOpen] = useState(false);
+  const { inbox, archive, completed, capture } = useStore();
   const searchable: Searchable[] = [
     ...[nba, reg, ins, esc].map((r) => ({ id: `rec-${r.id}`, title: r.title, subtitle: `Example recommendation · ${r.entity}` })),
     ...people.map((p) => ({ id: `person-${p.id}`, title: p.name, subtitle: 'Person' })),
@@ -49,31 +47,10 @@ export default function App() {
     <div className="mx-auto max-w-[860px] px-3.5 pb-32 pt-3 lg:ml-24 lg:max-w-none lg:pr-[360px]">
       <header className="mb-4 flex items-center justify-between gap-3">
         <div><h1 className="text-3xl font-bold">Life<span className="text-[var(--amber)]">OS</span></h1><p className="text-[var(--text-2)]">Mission Control · Your life, in view</p></div>
-        <button onClick={() => setTab('inbox')} className="min-h-11 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] px-4 font-semibold text-[var(--amber)]">＋ Capture</button>
+        <button onClick={() => setCaptureOpen(true)} className="min-h-11 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] px-4 font-semibold text-[var(--amber)]">＋ Capture</button>
       </header>
       <main className="mx-auto max-w-[860px]">
-        {tab === 'mission' && summaryView && (<section className="mb-4 rounded-3xl border border-[var(--line)] bg-[var(--surface-1)] p-4">
-          <button onClick={() => setSummaryView(null)} className="mb-4 min-h-10 rounded-xl border border-[var(--line)] px-3 text-sm text-[var(--amber)]">← Back to Mission</button>
-          <h2 className="mb-4 text-xl font-bold">{summaryView === 'completed' ? 'Completed items' : 'Archived items'}</h2>
-          {(summaryView === 'completed' ? completed : archive).length ? <ul className="space-y-2">{(summaryView === 'completed' ? completed : archive).map((item, index) => <li key={`${summaryView}-${index}`} className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-3"><span className="min-w-0 flex-1 break-words">{item}</span><button onClick={() => { if (summaryView === 'completed') useStore.getState().reopenCompletedAt(index); else useStore.getState().restoreAt(index); }} className="min-h-10 rounded-xl border border-[var(--line)] px-3 text-sm font-semibold text-[var(--amber)]">{summaryView === 'completed' ? 'Reopen' : 'Restore'}</button></li>)}</ul> : <p className="py-8 text-center text-[var(--text-2)]">No {summaryView} items yet.</p>}
-        </section>)}
-        {tab === 'mission' && !summaryView && (<>
-          <section className="mb-4 rounded-3xl border border-[var(--line)] bg-[var(--surface-1)] p-4">
-            <p className="mb-1 text-xs font-bold uppercase tracking-[.18em] text-[var(--amber)]">Universal capture</p>
-            <form onSubmit={submitCapture} className="flex gap-2">
-              <input value={draft} onChange={(e) => setDraft(e.target.value)} aria-label="Capture a task, thought, or follow-up" placeholder="What needs your attention?" className="min-h-12 min-w-0 flex-1 rounded-2xl border border-[var(--line)] bg-[var(--bg)] px-4 text-[var(--text)] outline-none focus:border-[var(--amber)]" />
-              <button type="submit" className="min-h-12 rounded-2xl bg-[var(--amber)] px-4 font-bold text-black">Add</button>
-            </form>
-            <p className="mt-2 text-xs text-[var(--text-2)]">Saved on this device · searchable · can be completed or archived</p>
-          </section>
-          <section aria-label="Mission Control summaries" className="mb-4 grid grid-cols-2 gap-3">
-            {[{label:'Open loops',value:inbox.length,action:() => { setSummaryView(null); setTab('inbox'); }},{label:'Completed',value:completed.length,action:() => setSummaryView('completed')},{label:'Archived',value:archive.length,action:() => setSummaryView('archived')},{label:'Recommendations',value:4,action:() => document.getElementById('recommendations')?.scrollIntoView({behavior:'smooth',block:'start'})}].map((item) => <button type="button" key={item.label} onClick={item.action} aria-label={`Open ${item.label}`} className="min-h-28 rounded-2xl border border-[var(--line)] bg-[var(--surface-1)] p-4 text-left shadow-[0_0_16px_rgba(55,125,255,0.04)] transition hover:border-[var(--blue)] hover:shadow-[0_0_18px_rgba(55,125,255,0.16)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--blue)] active:scale-[.99]"><p className="text-sm text-[var(--text-2)]">{item.label}</p><p className="mt-1 text-3xl font-bold text-[var(--text-1)]">{item.value}</p><p className="mt-2 text-xs text-[var(--text-2)]">Open view →</p></button>)}
-          </section>
-          <section className="mb-4 rounded-3xl border border-[var(--line)] bg-[var(--surface-1)] p-4">
-            <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">Open loops</h2><button onClick={() => setTab('inbox')} className="text-sm font-semibold text-[var(--amber)]">Manage all →</button></div>
-            <input value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Filter open loops" placeholder="Filter your open loops…" className="mb-3 min-h-10 w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 text-[var(--text)]" />
-            {filtered.length ? <ul className="space-y-2">{filtered.slice(0,5).map(({text,index}) => <li key={index} className="flex items-center gap-2 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-3"><span className="min-w-0 flex-1 break-words">{text}</span><button aria-label={`Complete ${text}`} onClick={() => completeAt(index)} className="min-h-9 rounded-xl border border-[var(--line)] px-3 text-xs font-semibold text-[var(--amber)]">Done</button><button aria-label={`Archive ${text}`} onClick={() => archiveAt(index)} className="min-h-9 rounded-xl px-2 text-xs text-[var(--text-2)]">Archive</button></li>)}</ul> : <p className="rounded-2xl border border-dashed border-[var(--line)] p-5 text-center text-sm text-[var(--text-2)]">No open loops yet. Capture something above to make this dashboard yours.</p>}
-          </section>
+        {tab === 'mission' && (<>
           <div className="mb-3"><NextBestActionCard rec={nba} /></div>
           <p className="mb-3 rounded-xl border border-[var(--line)] px-3 py-2 text-xs text-[var(--text-2)]">Demo recommendations below are illustrative examples, not live account data.</p>
           <Section><RecommendationCard rec={reg} label="⚡ EXECUTE NOW" /><RecommendationCard rec={ins} variant="decision" label="DECISIONS REQUIRED" /></Section>
@@ -89,7 +66,17 @@ export default function App() {
         }} />}
         {tab === 'more' && <More />}
       </main>
-      <BottomNavigation tab={tab} onChange={setTab} />
+      {captureOpen && <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 backdrop-blur-sm sm:items-center" onClick={(e) => { if (e.target === e.currentTarget) setCaptureOpen(false); }}>
+        <section role="dialog" aria-modal="true" aria-labelledby="capture-title" className="max-h-[85dvh] w-full max-w-xl overflow-y-auto rounded-3xl border border-[var(--line)] bg-[var(--surface-1)] p-4 shadow-[0_0_32px_rgba(255,106,0,0.14)]">
+          <div className="mb-3 flex items-center justify-between gap-3"><h2 id="capture-title" className="text-xl font-bold text-[var(--amber)]">Capture & Search</h2><button onClick={() => setCaptureOpen(false)} aria-label="Close capture and search" className="min-h-10 rounded-xl border border-[var(--line)] px-3">✕</button></div>
+          <form onSubmit={(e) => { submitCapture(e); }} className="mb-4 flex gap-2">
+            <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} aria-label="Capture a task, thought, or follow-up" placeholder="What needs your attention?" className="min-h-12 min-w-0 flex-1 rounded-2xl border border-[var(--line)] bg-[var(--bg)] px-4 text-[var(--text)] outline-none focus:border-[var(--amber)]" />
+            <button type="submit" className="min-h-12 rounded-2xl bg-[var(--amber)] px-4 font-bold text-black">Add</button>
+          </form>
+          <Search items={searchable} onOpen={(id) => { setCaptureOpen(false); if (id.startsWith('open-') || id.startsWith('completed-') || id.startsWith('archived-')) setTab('inbox'); else if (id.startsWith('person-') || id.startsWith('entity-')) setTab('entities'); else setTab('mission'); }} />
+        </section>
+      </div>}
+      <BottomNavigation tab={tab} onChange={(nextTab) => { if (nextTab === 'search') setCaptureOpen(true); else setTab(nextTab); }} />
     </div>
   );
 }

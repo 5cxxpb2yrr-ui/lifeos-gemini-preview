@@ -28,6 +28,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('mission');
   const [draft, setDraft] = useState('');
   const [query, setQuery] = useState('');
+  const [summaryView, setSummaryView] = useState<'completed' | 'archived' | null>(null);
   const { inbox, archive, completed, capture, completeAt, archiveAt } = useStore();
   const filtered = inbox.map((text, index) => ({ text, index })).filter((item) => item.text.toLowerCase().includes(query.toLowerCase()));
   const searchable: Searchable[] = [
@@ -51,7 +52,12 @@ export default function App() {
         <button onClick={() => setTab('inbox')} className="min-h-11 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] px-4 font-semibold text-[var(--amber)]">＋ Capture</button>
       </header>
       <main className="mx-auto max-w-[860px]">
-        {tab === 'mission' && (<>
+        {tab === 'mission' && summaryView && (<section className="mb-4 rounded-3xl border border-[var(--line)] bg-[var(--surface-1)] p-4">
+          <button onClick={() => setSummaryView(null)} className="mb-4 min-h-10 rounded-xl border border-[var(--line)] px-3 text-sm text-[var(--amber)]">← Back to Mission</button>
+          <h2 className="mb-4 text-xl font-bold">{summaryView === 'completed' ? 'Completed items' : 'Archived items'}</h2>
+          {(summaryView === 'completed' ? completed : archive).length ? <ul className="space-y-2">{(summaryView === 'completed' ? completed : archive).map((item, index) => <li key={`${summaryView}-${index}`} className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-3"><span className="min-w-0 flex-1 break-words">{item}</span><button onClick={() => { if (summaryView === 'completed') useStore.getState().reopenCompletedAt(index); else useStore.getState().restoreAt(index); }} className="min-h-10 rounded-xl border border-[var(--line)] px-3 text-sm font-semibold text-[var(--amber)]">{summaryView === 'completed' ? 'Reopen' : 'Restore'}</button></li>)}</ul> : <p className="py-8 text-center text-[var(--text-2)]">No {summaryView} items yet.</p>}
+        </section>)}
+        {tab === 'mission' && !summaryView && (<>
           <section className="mb-4 rounded-3xl border border-[var(--line)] bg-[var(--surface-1)] p-4">
             <p className="mb-1 text-xs font-bold uppercase tracking-[.18em] text-[var(--amber)]">Universal capture</p>
             <form onSubmit={submitCapture} className="flex gap-2">
@@ -60,8 +66,8 @@ export default function App() {
             </form>
             <p className="mt-2 text-xs text-[var(--text-2)]">Saved on this device · searchable · can be completed or archived</p>
           </section>
-          <section className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[{label:'Open loops',value:inbox.length},{label:'Completed',value:completed.length},{label:'Archived',value:archive.length},{label:'Recommendations',value:4}].map((item) => <div key={item.label} className="rounded-2xl border border-[var(--line)] bg-[var(--surface-1)] p-3"><p className="text-xs text-[var(--text-2)]">{item.label}</p><p className="mt-1 text-2xl font-bold text-[var(--amber)]">{item.value}</p></div>)}
+          <section aria-label="Mission Control summaries" className="mb-4 grid grid-cols-2 gap-3">
+            {[{label:'Open loops',value:inbox.length,action:() => { setSummaryView(null); setTab('inbox'); }},{label:'Completed',value:completed.length,action:() => setSummaryView('completed')},{label:'Archived',value:archive.length,action:() => setSummaryView('archived')},{label:'Recommendations',value:4,action:() => document.getElementById('recommendations')?.scrollIntoView({behavior:'smooth',block:'start'})}].map((item) => <button type="button" key={item.label} onClick={item.action} aria-label={`Open ${item.label}`} className="min-h-28 rounded-2xl border border-[var(--line)] bg-[var(--surface-1)] p-4 text-left shadow-[0_0_16px_rgba(55,125,255,0.04)] transition hover:border-[var(--blue)] hover:shadow-[0_0_18px_rgba(55,125,255,0.16)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--blue)] active:scale-[.99]"><p className="text-sm text-[var(--text-2)]">{item.label}</p><p className="mt-1 text-3xl font-bold text-[var(--text-1)]">{item.value}</p><p className="mt-2 text-xs text-[var(--text-2)]">Open view →</p></button>)}
           </section>
           <section className="mb-4 rounded-3xl border border-[var(--line)] bg-[var(--surface-1)] p-4">
             <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">Open loops</h2><button onClick={() => setTab('inbox')} className="text-sm font-semibold text-[var(--amber)]">Manage all →</button></div>

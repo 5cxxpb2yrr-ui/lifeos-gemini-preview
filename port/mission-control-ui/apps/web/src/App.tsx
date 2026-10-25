@@ -34,9 +34,9 @@ export default function App() {
     ...[nba, reg, ins, esc].map((r) => ({ id: `rec-${r.id}`, title: r.title, subtitle: `Example recommendation · ${r.entity}` })),
     ...people.map((p) => ({ id: `person-${p.id}`, title: p.name, subtitle: 'Person' })),
     ...entities.map((entity) => ({ id: `entity-${entity.id}`, title: entity.name, subtitle: `${entity.type} · example data` })),
-    ...inbox.map((item, index) => ({ id: `open-${index}`, title: item, subtitle: 'Open loop' })),
-    ...completed.map((item, index) => ({ id: `completed-${index}`, title: item, subtitle: 'Completed loop' })),
-    ...archive.map((item, index) => ({ id: `archived-${index}`, title: item, subtitle: 'Archived loop' })),
+    ...inbox.map((item) => ({ id: `open-${item.id}`, title: item.text, subtitle: 'Open loop' })),
+    ...completed.map((item) => ({ id: `completed-${item.id}`, title: item.text, subtitle: 'Completed loop' })),
+    ...archive.map((item) => ({ id: `archived-${item.id}`, title: item.text, subtitle: 'Archived loop' })),
   ];
   const submitCapture = (e: React.FormEvent) => {
     e.preventDefault();

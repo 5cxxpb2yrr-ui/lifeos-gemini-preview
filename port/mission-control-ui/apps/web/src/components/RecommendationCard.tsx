@@ -15,7 +15,7 @@ export function RecommendationCard({ rec, variant = 'default', label, onAction, 
   compact?: boolean; onExpand?: () => void;
 }) {
   return (
-    <article className={`rounded-2xl border bg-[var(--surface-1)] p-3 transition duration-[180ms] ${ACCENT[variant]}`}>
+    <article onClick={compact ? onExpand : undefined} onKeyDown={(e) => { if (compact && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onExpand?.(); } }} role={compact ? 'button' : undefined} tabIndex={compact ? 0 : undefined} className={`rounded-2xl border bg-[var(--surface-1)] p-3 transition duration-[180ms] ${compact ? 'cursor-pointer hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--amber)]' : ''} ${ACCENT[variant]}`}>
       {label && <p className="mb-1 text-[10px] font-bold tracking-wide text-[var(--text-2)]">{label}</p>}
       <p className="text-[11px] text-[var(--text-3)]">{rec.entity}</p>
       <h3 className="text-sm font-semibold leading-snug">{rec.title}</h3>
@@ -32,7 +32,6 @@ export function RecommendationCard({ rec, variant = 'default', label, onAction, 
           ))}
         </div>
       </>}
-      {compact && <button type="button" onClick={onExpand} className="mt-2 min-h-9 w-full rounded-xl border border-[var(--line)] px-3 text-xs font-semibold text-[var(--amber)]" aria-label={`Open details for ${rec.title}`}>View details <span aria-hidden="true">↗</span></button>}
     </article>
   );
 }

@@ -48,7 +48,7 @@ function normalizeLoops(value: unknown, status: 'inbox' | 'archive' | 'completed
       const loop = item as Partial<OpenLoop>;
       return [{
         id: typeof loop.id === 'string' && loop.id ? loop.id : `migrated-${status}-${index}`,
-        text: loop.text,
+        text: loop.text as string,
         createdAt: typeof loop.createdAt === 'string' ? loop.createdAt : new Date(0).toISOString(),
         ...(typeof loop.completedAt === 'string' ? { completedAt: loop.completedAt } : status === 'completed' ? { completedAt: new Date(0).toISOString() } : {}),
         ...(typeof loop.archivedAt === 'string' ? { archivedAt: loop.archivedAt } : status === 'archive' ? { archivedAt: new Date(0).toISOString() } : {}),

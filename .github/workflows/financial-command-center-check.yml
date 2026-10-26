@@ -1,0 +1,54 @@
+name: Financial Command Center checks
+
+on:
+  push:
+    branches:
+      - "feat/financial-command-center"
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "vite.config.ts"
+      - "tailwind.config.js"
+      - "postcss.config.js"
+      - "src/**"
+      - "port/mission-control-ui/**"
+      - ".github/workflows/financial-command-center-check.yml"
+  pull_request:
+    branches:
+      - "audit/mission-control-port-20261024"
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "vite.config.ts"
+      - "tailwind.config.js"
+      - "postcss.config.js"
+      - "src/**"
+      - "port/mission-control-ui/**"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Test and build without deploying
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: npm run test:ci
+      - name: Build production assets
+        run: npm run build
+      - name: Confirm static output
+        run: |
+          test -s dist/index.html
+          test -d dist/assets
+          echo "Build verified. No deployment performed."

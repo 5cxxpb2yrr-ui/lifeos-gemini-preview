@@ -8,6 +8,7 @@ import { Section } from './components/Section';
 import { Entities, type Entity } from './screens/Entities';
 import { Inbox } from './screens/Inbox';
 import { More } from './screens/More';
+import { PayCommandCenter } from './screens/PayCommandCenter';
 import { Search, type Searchable } from './screens/Search';
 import { useStore } from './store';
 import type { Person } from './lib/capture';
@@ -62,6 +63,7 @@ export default function App() {
           <Section full><RecommendationCard rec={esc} compact onExpand={() => setDetailRec(esc)} variant="risk" label="⚠ AT RISK" /></Section>
           <ReviewQueue items={[{ id: '1', title: 'Review Tax Return Draft', note: 'Example recommendation · due next week' }, { id: '2', title: 'Review Estate Planning Documents', note: 'Example recommendation · last reviewed 18 months ago' }]} />
         </>)}
+        {tab === 'finance' && <PayCommandCenter />}
         {tab === 'inbox' && <Inbox people={people} />}
         {tab === 'entities' && <Entities entities={entities} />}
         {tab === 'search' && <Search items={searchable} onOpen={openSearchResult} />}

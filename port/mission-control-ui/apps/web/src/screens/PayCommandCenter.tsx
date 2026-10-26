@@ -113,7 +113,9 @@ export function PayCommandCenter() {
       let section: PayLineItem['section'] = 'other';
       for (const raw of pageRows) {
         const row = raw.replace(/\s+/g, ' ').trim();
-        if (/TAX[- ]EXEMPT DEDUCTIONS|DEDUCTIONS\s+Amount/i.test(row)) { section = 'deductions'; continue; }
+        if (/TAX[- ]EXEMPT DEDUCTIONS|PRE[- ]TAX DEDUCTIONS/i.test(row)) { section = 'preTax'; continue; }
+        if (/POST[- ]TAX DEDUCTIONS|AFTER[- ]TAX DEDUCTIONS/i.test(row)) { section = 'postTax'; continue; }
+        if (/^DEDUCTIONS(?:\\s+Amount|\\s*$)/i.test(row)) { section = 'deductions'; continue; }
         if (/^TAXES(?:\s|$)/i.test(row)) { section = 'taxes'; continue; }
         if (/Retro-active Current Period|GROSS\s+Rate\s+Hours|Pay Date Net|PAY PERIOD|YEAR TO DATE/i.test(row)) continue;
         if (/TOTAL EARNINGS/i.test(row)) { section = 'other'; continue; }

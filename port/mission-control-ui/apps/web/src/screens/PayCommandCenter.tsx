@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
 type Tab = 'home' | 'paycheck' | 'plan' | 'year';
 type Check = {
@@ -51,7 +51,7 @@ export function PayCommandCenter() {
   const next = nextPayday();
   const upcoming = [...data.bills].filter(b => !b.paid).sort((a,b) => a.dueDate.localeCompare(b.dueDate));
   const upcomingTotal = upcoming.reduce((s,b) => s+b.amount,0);
-  const addCheck = (e: React.FormEvent) => {
+  const addCheck = (e: FormEvent) => {
     e.preventDefault();
     const n = (s:string) => Number(s) || 0;
     if (!draft.payDate || !draft.periodStart || !draft.periodEnd || !draft.gross || !draft.net) { setNotice('Add pay date, period dates, gross and net to save this check.'); return; }
@@ -61,7 +61,7 @@ export function PayCommandCenter() {
     setData(d => ({...d, checks:[...d.checks.filter(c => c.payDate !== check.payDate || c.periodStart !== check.periodStart), check]}));
     setFormOpen(false);
   };
-  const addBill = (e: React.FormEvent) => {
+  const addBill = (e: FormEvent) => {
     e.preventDefault();
     if (!billDraft.title.trim() || !billDraft.dueDate || Number(billDraft.amount) <= 0) return;
     setData(d => ({...d, bills:[...d.bills, {id:id(), title:billDraft.title.trim(), amount:Number(billDraft.amount), dueDate:billDraft.dueDate, paid:false}]}));
@@ -84,7 +84,7 @@ export function PayCommandCenter() {
       setNotice('Imported ' + validChecks.length + ' paychecks and ' + validBills.length + ' bills into this browser.');
     } catch (err) { setNotice(err instanceof Error ? err.message : 'Could not import file.'); }
   };
-  const TabButton = ({value, children}:{value:Tab;children:React.ReactNode}) => <button onClick={()=>setTab(value)} className={'min-h-10 flex-1 rounded-xl px-2 text-xs font-bold ' + (tab===value?'bg-[var(--amber)] text-black':'text-[var(--text-2)]')}>{children}</button>;
+  const TabButton = ({value, children}:{value:Tab;children:ReactNode}) => <button onClick={()=>setTab(value)} className={'min-h-10 flex-1 rounded-xl px-2 text-xs font-bold ' + (tab===value?'bg-[var(--amber)] text-black':'text-[var(--text-2)]')}>{children}</button>;
   return <section className="space-y-4">
     <header className="flex items-start justify-between gap-3">
       <div><p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--amber)]">LifeOS · Finance</p><h2 className="text-2xl font-bold">Pay Command Center</h2><p className="mt-1 text-xs text-[var(--text-2)]">Paycheck intelligence · cash flow · annual trends</p></div>

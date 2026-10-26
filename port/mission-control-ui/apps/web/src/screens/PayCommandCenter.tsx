@@ -8,6 +8,7 @@ type Check = {
   gross: number; taxes: number; deductions: number; net: number;
   rate: number; week1Hours: number; week2Hours: number; doublePay: number; overtime: number;
   source: string; importedAt: string;
+  reportedYtd?: { gross: number; taxes: number; deductions: number; net: number };
 };
 type Bill = { id: string; title: string; amount: number; dueDate: string; paid: boolean };
 type FinanceData = { checks: Check[]; bills: Bill[] };
@@ -118,6 +119,7 @@ export function PayCommandCenter() {
     {tab==='year' && <>
       <div className="grid grid-cols-2 gap-3">{([['YTD gross',totals.gross],['YTD net',totals.net],['Taxes recorded',totals.taxes],['Deductions recorded',totals.deductions],['Double pay',totals.doublePay],['Overtime',totals.overtime]] as [string,number][]).map(([l,v])=><div className={card} key={l}><p className="text-xs text-[var(--text-2)]">{l.toUpperCase()}</p><p className="mt-2 text-xl font-bold">{money(v)}</p></div>)}</div>
       <div className={card}><h3 className="font-bold">History coverage</h3><p className="mt-1 text-sm text-[var(--text-2)]">{checks.length} paycheck records · sums shown are only the records imported here, not employer YTD totals.</p>{checks.length>0&&<div className="mt-3 space-y-2">{checks.map(c=><div key={c.id} className="flex justify-between gap-2 border-t border-[var(--line)] pt-2 text-sm"><span>{date(c.payDate)}</span><span>{money(c.gross)} gross</span><b>{money(c.net)}</b></div>)}</div>}</div>
+      {latest?.reportedYtd && <div className={card}><h3 className="font-bold">Latest employer-reported YTD</h3><p className="mt-1 text-xs text-[var(--text-2)]">Reported on the latest imported paystub dated {date(latest.payDate)}. This is kept separate from calculated sums.</p><div className="mt-3 grid grid-cols-2 gap-3 text-sm"><p>Gross <b>{money(latest.reportedYtd.gross)}</b></p><p>Net <b>{money(latest.reportedYtd.net)}</b></p><p>Taxes <b>{money(latest.reportedYtd.taxes)}</b></p><p>Deductions <b>{money(latest.reportedYtd.deductions)}</b></p></div><p className="mt-3 text-xs text-[var(--text-2)]">Imported-check sum vs reported YTD — gross {money(totals.gross-latest.reportedYtd.gross)}, net {money(totals.net-latest.reportedYtd.net)}. Any difference needs investigation before forecasting.</p></div>}
       <div className={card}><h3 className="font-bold">Year-end projection</h3><p className="mt-1 text-xs text-[var(--text-2)]">Projection stays unavailable until enough dated paycheck records exist. This prevents a single check or stale hardcoded number from being presented as a forecast.</p>{checks.length>=3&&<p className="mt-2 text-sm">Average recorded net per check: <b>{money(totals.net/checks.length)}</b>. This is a historical average, not a guaranteed future deposit.</p>}</div>
     </>}
   </section>;

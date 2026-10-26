@@ -12,6 +12,13 @@ type Check = {
 };
 type Bill = { id: string; title: string; amount: number; dueDate: string; paid: boolean };
 type FinanceData = { checks: Check[]; bills: Bill[] };
+type PdfReview = {
+  fileName: string; periodStart: string; periodEnd: string; payDate: string;
+  gross: string; taxes: string; deductions: string; net: string; rate: string;
+  week1Hours: string; week2Hours: string; doublePay: string; overtime: string;
+  kind: 'biweekly' | 'off-cycle'; label: string; warnings: string[];
+  reportedYtd?: { gross: number; taxes: number; deductions: number; net: number };
+};
 const KEY = 'lifeos.financial-command-center.v1';
 const blank: FinanceData = { checks: [], bills: [] };
 const money = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number.isFinite(n) ? n : 0);
@@ -45,6 +52,8 @@ export function PayCommandCenter() {
   const [formOpen, setFormOpen] = useState(false);
   const [billOpen, setBillOpen] = useState(false);
   const [notice, setNotice] = useState('');
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfReview, setPdfReview] = useState<PdfReview | null>(null);
   const [draft, setDraft] = useState({ periodStart: '', periodEnd: '', payDate: '', gross: '', taxes: '', deductions: '', net: '', rate: '41.64', week1Hours: '', week2Hours: '', doublePay: '', overtime: '' });
   const [billDraft, setBillDraft] = useState({ title: '', amount: '', dueDate: '' });
   useEffect(() => { localStorage.setItem(KEY, JSON.stringify(data)); }, [data]);
@@ -63,6 +72,78 @@ export function PayCommandCenter() {
     else setNotice('Paycheck saved and totals reconcile.');
     setData(d => ({...d, checks:[...d.checks.filter(c => c.payDate !== check.payDate || c.periodStart !== check.periodStart), check]}));
     setFormOpen(false);
+  };
+  const importPaystubPdf = async (file?: File) => {
+    if (!file) return;
+    setPdfBusy(true); setPdfReview(null); setNotice('');
+    try {
+      // PDF text is extracted in this browser. The PDF itself is not uploaded to a server.
+      const loadPdfJs = new Function('url', 'return import(url)') as (url: string) => Promise<any>;
+      const pdfjs = await loadPdfJs('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs');
+      pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+      const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+      let text = '';
+      for (let pageNo = 1; pageNo <= Math.min(pdf.numPages, 2); pageNo++) {
+        const page = await pdf.getPage(pageNo);
+        const content = await page.getTextContent();
+        text += content.items.map((item: any) => typeof item.str === 'string' ? item.str : '').join(' ') + ' ';
+      }
+      const normalized = text.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ');
+      const amount = (value: string) => Number(value.replace(/,/g, ''));
+      const dateValue = (value: string) => value.replace(/[.]/g, '-');
+      const period = normalized.match(/PAY\s*PERIOD\s*\.?\.?\s*(20\d{2}[.-]\d{2}[.-]\d{2})\s*[-–]\s*(20\d{2}[.-]\d{2}[.-]\d{2})/i);
+      const summary = normalized.match(/(20\d{2}[.-]\d{2}[.-]\d{2})\s+Current:\s*([\d,]+\.\d{2})\s*=\s*([\d,]+\.\d{2})\s*-\s*([\d,]+\.\d{2})\s*-\s*([\d,]+\.\d{2})/i);
+      const ytd = normalized.match(/YTD\.{0,5}:?\s*([\d,]+\.\d{2})\s*=\s*([\d,]+\.\d{2})\s*-\s*([\d,]+\.\d{2})\s*-\s*([\d,]+\.\d{2})/i);
+      const regular = [...normalized.matchAll(/Regular\s+working\s+time\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})/gi)];
+      const double = normalized.match(/Double\s+Pay\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})/i);
+      if (!summary) throw new Error('Could not confidently read the current pay summary. Use a text-based Kia paystub PDF and enter the values manually if needed.');
+      const payDate = dateValue(summary[1]);
+      const isOffCycle = /off[- ]cycle/i.test(normalized) && amount(summary[3]) <= 1500;
+      const warnings = ['Review every extracted field against the PDF before saving.', 'Overtime amount is left at $0 because the “Overtime paid” line can show a year-to-date total, not current-period pay.'];
+      if (!period) warnings.push('Pay-period dates were not detected; enter them before saving.');
+      if (regular.length < 2) warnings.push('Could not confidently detect both weekly regular-time rows; check the hours.');
+      if (!ytd) warnings.push('Employer-reported YTD totals were not detected on the first two pages.');
+      setPdfReview({
+        fileName: file.name,
+        periodStart: period ? dateValue(period[1]) : '',
+        periodEnd: period ? dateValue(period[2]) : '',
+        payDate,
+        net: String(amount(summary[2])), gross: String(amount(summary[3])), taxes: String(amount(summary[4])), deductions: String(amount(summary[5])),
+        rate: regular[0] ? String(amount(regular[0][1])) : '41.64',
+        week1Hours: regular[0] ? String(amount(regular[0][2])) : '',
+        week2Hours: regular[1] ? String(amount(regular[1][2])) : '',
+        doublePay: double ? String(amount(double[3])) : '0',
+        overtime: '0',
+        kind: isOffCycle ? 'off-cycle' : 'biweekly',
+        label: isOffCycle ? 'Off-cycle payment' : '',
+        warnings,
+        reportedYtd: ytd ? { net: amount(ytd[1]), gross: amount(ytd[2]), taxes: amount(ytd[3]), deductions: amount(ytd[4]) } : undefined
+      });
+      setNotice('PDF text extracted locally. Review the proposed paycheck below; nothing has been saved yet.');
+    } catch (err) {
+      setNotice('PDF import failed: ' + (err instanceof Error ? err.message : 'Could not read this file.') + ' You can still add the paycheck manually.');
+    } finally { setPdfBusy(false); }
+  };
+  const savePdfReview = (e: FormEvent) => {
+    e.preventDefault();
+    if (!pdfReview) return;
+    const n = (s: string) => Number(s) || 0;
+    if (!pdfReview.periodStart || !pdfReview.periodEnd || !pdfReview.payDate || !pdfReview.gross || !pdfReview.net) {
+      setNotice('Enter pay date, period dates, gross and net before saving.'); return;
+    }
+    const check: Check = {
+      id: id(), kind: pdfReview.kind, label: pdfReview.kind === 'off-cycle' ? (pdfReview.label.trim() || 'Off-cycle payment') : undefined,
+      periodStart: pdfReview.periodStart, periodEnd: pdfReview.periodEnd, payDate: pdfReview.payDate,
+      gross: n(pdfReview.gross), taxes: n(pdfReview.taxes), deductions: n(pdfReview.deductions), net: n(pdfReview.net),
+      rate: n(pdfReview.rate), week1Hours: n(pdfReview.week1Hours), week2Hours: n(pdfReview.week2Hours),
+      doublePay: n(pdfReview.doublePay), overtime: n(pdfReview.overtime),
+      source: 'Kia PDF · ' + pdfReview.fileName, importedAt: new Date().toISOString(), reportedYtd: pdfReview.reportedYtd
+    };
+    const duplicate = data.checks.some(c => c.payDate === check.payDate && c.periodStart === check.periodStart);
+    if (duplicate && !confirm('A paycheck for this pay date and period already exists. Replace it?')) return;
+    setData(d => ({ ...d, checks: [...d.checks.filter(c => c.payDate !== check.payDate || c.periodStart !== check.periodStart), check] }));
+    setPdfReview(null);
+    setNotice(Math.abs(check.gross-check.taxes-check.deductions-check.net) > 0.02 ? 'Paystub saved, but gross − taxes − deductions does not equal net. Check the source values.' : 'Reviewed paystub saved. Totals reconcile.');
   };
   const addBill = (e: FormEvent) => {
     e.preventDefault();
@@ -106,7 +187,9 @@ export function PayCommandCenter() {
       <div className={card}><h3 className="font-bold">Data safety</h3><p className="mt-1 text-xs text-[var(--text-2)]">Paychecks and bills are stored in this browser's local storage. They are not synced to the LifeOS graph. Export a backup before clearing browser data or changing devices.</p><label className="mt-3 block"><span className={label}>Import LifeOS finance backup (.json)</span><input className={field} type="file" accept=".json,application/json" onChange={e=>void importBackup(e.target.files?.[0])}/></label></div>
     </>}
     {tab==='paycheck' && <>
-      <div className="flex gap-2"><button className={button+' flex-1 text-[var(--amber)]'} onClick={()=>setFormOpen(v=>!v)}>{formOpen?'Cancel':'＋ Add paycheck'}</button><label className={button+' flex-1 flex items-center justify-center'}>Import JSON<input className="sr-only" type="file" accept=".json,application/json" onChange={e=>void importBackup(e.target.files?.[0])}/></label></div>
+      <div className="grid grid-cols-2 gap-2"><button className={button+' text-[var(--amber)]'} onClick={()=>setFormOpen(v=>!v)}>{formOpen?'Cancel':'＋ Add paycheck'}</button><label className={button+' flex items-center justify-center '+(pdfBusy?'opacity-60':'text-[var(--amber)]')}>{pdfBusy?'Reading PDF…':'Import Kia PDF'}<input className="sr-only" type="file" accept="application/pdf,.pdf" disabled={pdfBusy} onChange={e=>{void importPaystubPdf(e.target.files?.[0]);e.currentTarget.value='';}}/></label></div>
+      <div className="flex justify-end"><label className="text-xs text-[var(--text-2)] underline">Import JSON backup<input className="sr-only" type="file" accept=".json,application/json" onChange={e=>void importBackup(e.target.files?.[0])}/></label></div>
+      {pdfReview && <form onSubmit={savePdfReview} className={card+' space-y-3 border-[var(--amber)]/50'}><div><h3 className="font-bold text-[var(--amber)]">Review extracted paystub</h3><p className="mt-1 break-all text-xs text-[var(--text-2)]">{pdfReview.fileName} · extracted locally · not saved yet</p></div><div className="rounded-xl border border-[var(--line)] p-3 text-xs text-[var(--text-2)]"><b className="block mb-1 text-[var(--text)]">Please verify before saving</b>{pdfReview.warnings.map(w=><p key={w} className="mt-1">• {w}</p>)}</div><label><span className={label}>Record type</span><select className={field} value={pdfReview.kind} onChange={e=>setPdfReview(p=>p?({...p,kind:e.target.value as PdfReview['kind']}):p)}><option value="biweekly">Regular biweekly paycheck</option><option value="off-cycle">Off-cycle payment</option></select></label>{pdfReview.kind==='off-cycle'&&<label><span className={label}>Label</span><input className={field} value={pdfReview.label} onChange={e=>setPdfReview(p=>p?({...p,label:e.target.value}):p)}/></label>}<div className="grid grid-cols-2 gap-3">{([['periodStart','Period starts','date'],['periodEnd','Period ends','date'],['payDate','Pay date','date'],['gross','Gross pay','number'],['taxes','Taxes','number'],['deductions','Deductions','number'],['net','Net pay','number'],['rate','Base hourly rate','number'],['week1Hours','Week 1 regular hours','number'],['week2Hours','Week 2 regular hours','number'],['doublePay','Double-pay amount','number'],['overtime','Current-period overtime amount','number']] as [keyof PdfReview,string,string][]).map(([k,l,t])=><label key={k}><span className={label}>{l}</span><input required={['periodStart','periodEnd','payDate','gross','net'].includes(k)} className={field} type={t} step={t==='number'?'0.01':undefined} value={String(pdfReview[k] ?? '')} onChange={e=>setPdfReview(p=>p?({...p,[k]:e.target.value}):p)}/></label>)}</div><div className="flex gap-2"><button type="button" className={button+' flex-1'} onClick={()=>setPdfReview(null)}>Cancel import</button><button className="min-h-11 flex-1 rounded-xl bg-[var(--amber)] px-3 text-sm font-bold text-black" type="submit">Review & save paycheck</button></div></form>
       {formOpen && <form onSubmit={addCheck} className={card+' space-y-3'}><h3 className="font-bold">New paycheck record</h3><p className="text-xs text-[var(--text-2)]">Enter the two weekly regular-time lines separately. Amounts are in dollars; don't enter identifying information from the stub.</p><div className="grid grid-cols-2 gap-3">{([['periodStart','Period starts','date'],['periodEnd','Period ends','date'],['payDate','Pay date','date'],['gross','Gross pay','number'],['taxes','Taxes','number'],['deductions','Deductions','number'],['net','Net pay','number'],['rate','Base hourly rate','number'],['week1Hours','Week 1 regular hours','number'],['week2Hours','Week 2 regular hours','number'],['doublePay','Double-pay amount','number'],['overtime','Overtime amount','number']] as [keyof typeof draft,string,string][]).map(([k,l,t])=><label key={k}><span className={label}>{l}</span><input required={['periodStart','periodEnd','payDate','gross','net'].includes(k)} className={field} type={t} step={t==='number'?'0.01':undefined} value={draft[k]} onChange={e=>setDraft(d=>({...d,[k]:e.target.value}))}/></label>)}</div><button className="min-h-11 w-full rounded-xl bg-[var(--amber)] font-bold text-black" type="submit">Save paycheck</button></form>}
       {checks.length===0?<div className={card}><p className="font-semibold">No paychecks recorded</p><p className="mt-1 text-sm text-[var(--text-2)]">Add a paycheck or import a JSON backup. A PDF importer is planned separately so extracted numbers can be reviewed before saving.</p></div>:checks.map(c=><article key={c.id} className={card}><div className="flex items-start justify-between gap-2"><div><h3 className="font-bold">{money(c.net)} net</h3><p className="text-xs text-[var(--text-2)]">{c.kind==='off-cycle'?(c.label||'Off-cycle payment'):date(c.periodStart)+' – '+date(c.periodEnd)} · paid {date(c.payDate)}</p></div><button className="text-xs text-[var(--critical)]" onClick={()=>{if(confirm('Delete this paycheck record?'))setData(d=>({...d,checks:d.checks.filter(x=>x.id!==c.id)}))}}>Delete</button></div><div className="mt-3 grid grid-cols-2 gap-2 text-sm"><p>Gross <b>{money(c.gross)}</b></p><p>Taxes <b>{money(c.taxes)}</b></p><p>Deductions <b>{money(c.deductions)}</b></p><p>Double pay <b>{money(c.doublePay)}</b></p><p>Overtime <b>{money(c.overtime)}</b></p><p>Week 1 / 2 <b>{c.week1Hours}h / {c.week2Hours}h</b></p></div><p className={'mt-2 text-xs '+(Math.abs(c.gross-c.taxes-c.deductions-c.net)>.02?'text-[var(--critical)]':'text-[var(--gold)]')}>{Math.abs(c.gross-c.taxes-c.deductions-c.net)>.02?'Needs reconciliation':'Gross − taxes − deductions = net'}</p></article>)}
     </>}

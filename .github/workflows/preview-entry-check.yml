@@ -1,0 +1,39 @@
+name: Preview entry build check
+
+on:
+  push:
+    branches:
+      - "fix/preview-vite-entry"
+    paths:
+      - "index.html"
+      - "src/**"
+      - "port/mission-control-ui/**"
+      - "package.json"
+      - "vite.config.ts"
+      - "tailwind.config.js"
+      - "postcss.config.js"
+      - ".github/workflows/preview-entry-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Test and build without deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests and build
+        run: npm run verify
+      - name: Confirm the compiled app entry
+        run: |
+          test -s dist/index.html
+          grep -q './assets/' dist/index.html
+          test -d dist/assets
+          echo "Vite compiled the React source. No deployment performed."

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
 type Tab = 'home' | 'paycheck' | 'plan' | 'year';
+type PayLineItem = { section: 'earnings' | 'taxes' | 'deductions' | 'other'; label: string; rawText: string };
 type Check = {
   kind?: 'biweekly' | 'off-cycle';
   label?: string;
@@ -9,6 +10,7 @@ type Check = {
   rate: number; week1Hours: number; week2Hours: number; doublePay: number; overtime: number;
   source: string; importedAt: string;
   reportedYtd?: { gross: number; taxes: number; deductions: number; net: number };
+  lineItems?: PayLineItem[];
 };
 type Bill = { id: string; title: string; amount: number; dueDate: string; paid: boolean };
 type FinanceData = { checks: Check[]; bills: Bill[] };
@@ -18,6 +20,7 @@ type PdfReview = {
   week1Hours: string; week2Hours: string; doublePay: string; overtime: string;
   kind: 'biweekly' | 'off-cycle'; label: string; warnings: string[];
   reportedYtd?: { gross: number; taxes: number; deductions: number; net: number };
+  lineItems: PayLineItem[];
 };
 const KEY = 'lifeos.financial-command-center.v1';
 const blank: FinanceData = { checks: [], bills: [] };
@@ -82,13 +85,46 @@ export function PayCommandCenter() {
       const pdfjs = await loadPdfJs('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs');
       pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
       const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
-      let text = '';
-      for (let pageNo = 1; pageNo <= Math.min(pdf.numPages, 2); pageNo++) {
+      const pageRows: string[] = [];
+      for (let pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
         const page = await pdf.getPage(pageNo);
         const content = await page.getTextContent();
-        text += content.items.map((item: any) => typeof item.str === 'string' ? item.str : '').join(' ') + ' ';
+        // Preserve visual row order and read every page, including detailed taxes and deductions.
+        const rows: { y: number; parts: { x: number; text: string }[] }[] = [];
+        for (const item of content.items as any[]) {
+          if (typeof item.str !== 'string' || !item.str.trim()) continue;
+          const x = Number(item.transform?.[4] ?? 0);
+          const y = Number(item.transform?.[5] ?? 0);
+          let row = rows.find(r => Math.abs(r.y - y) <= 2.5);
+          if (!row) { row = { y, parts: [] }; rows.push(row); }
+          row.parts.push({ x, text: item.str });
+        }
+        rows.sort((a, b) => b.y - a.y);
+        for (const row of rows) {
+          const line = row.parts.sort((a, b) => a.x - b.x).map(p => p.text.trim()).filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+          if (line) pageRows.push(line);
+        }
       }
+      const text = pageRows.join(' ');
       const normalized = text.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ');
+      const lineItems: PayLineItem[] = [];
+      let section: PayLineItem['section'] = 'other';
+      for (const raw of pageRows) {
+        const row = raw.replace(/\s+/g, ' ').trim();
+        if (/TAX[- ]EXEMPT DEDUCTIONS|DEDUCTIONS\s+Amount/i.test(row)) { section = 'deductions'; continue; }
+        if (/^TAXES(?:\s|$)/i.test(row)) { section = 'taxes'; continue; }
+        if (/Retro-active Current Period|GROSS\s+Rate\s+Hours|Pay Date Net|PAY PERIOD|YEAR TO DATE/i.test(row)) continue;
+        if (/TOTAL EARNINGS/i.test(row)) { section = 'other'; continue; }
+        if (/TOTAL TAX|TOTAL DEDUCTIONS|TOTAL TAX-EXMPT/i.test(row)) continue;
+        if (/^Regular working time\b|^Overtime paid\b|^Double Pay\b|^Holiday Pay\b|^PTO\b|^Bereavement leave\b|^Off-Cycle\b|^AnnualBnus|^Attendance Award|^EE GTLI|^Difference prev\./i.test(row)) section = 'earnings';
+        const hasAmount = /\d[\d,]*\.\d{2}-?/.test(row);
+        const looksLikeLine = hasAmount && !/^[|\-_*\s]+$/.test(row) && !/^Date\s*:/i.test(row) && !/^Kia Georgia/i.test(row);
+        const isHeading = /^(?:TAXES|TAX-EXEMPT DEDUCTIONS|GROSS|Rate|Amount|YEAR TO DATE|Current:|YTD)/i.test(row);
+        if (looksLikeLine && !isHeading) {
+          const labelText = row.replace(/^[|\s]+/, '').replace(/[|\s]+$/, '');
+          lineItems.push({ section, label: labelText, rawText: labelText });
+        }
+      }
       const amount = (value: string) => Number(value.replace(/,/g, ''));
       const dateValue = (value: string) => value.replace(/[.]/g, '-');
       const period = normalized.match(/PAY\s*PERIOD\s*\.?\.?\s*(20\d{2}[.-]\d{2}[.-]\d{2})\s*[-–]\s*(20\d{2}[.-]\d{2}[.-]\d{2})/i);
@@ -117,7 +153,8 @@ export function PayCommandCenter() {
         kind: isOffCycle ? 'off-cycle' : 'biweekly',
         label: isOffCycle ? 'Off-cycle payment' : '',
         warnings,
-        reportedYtd: ytd ? { net: amount(ytd[1]), gross: amount(ytd[2]), taxes: amount(ytd[3]), deductions: amount(ytd[4]) } : undefined
+        reportedYtd: ytd ? { net: amount(ytd[1]), gross: amount(ytd[2]), taxes: amount(ytd[3]), deductions: amount(ytd[4]) } : undefined,
+        lineItems
       });
       setNotice('PDF text extracted locally. Review the proposed paycheck below; nothing has been saved yet.');
     } catch (err) {
@@ -137,7 +174,7 @@ export function PayCommandCenter() {
       gross: n(pdfReview.gross), taxes: n(pdfReview.taxes), deductions: n(pdfReview.deductions), net: n(pdfReview.net),
       rate: n(pdfReview.rate), week1Hours: n(pdfReview.week1Hours), week2Hours: n(pdfReview.week2Hours),
       doublePay: n(pdfReview.doublePay), overtime: n(pdfReview.overtime),
-      source: 'Kia PDF · ' + pdfReview.fileName, importedAt: new Date().toISOString(), reportedYtd: pdfReview.reportedYtd
+      source: 'Kia PDF · ' + pdfReview.fileName, importedAt: new Date().toISOString(), reportedYtd: pdfReview.reportedYtd, lineItems: pdfReview.lineItems
     };
     const duplicate = data.checks.some(c => c.payDate === check.payDate && c.periodStart === check.periodStart);
     if (duplicate && !confirm('A paycheck for this pay date and period already exists. Replace it?')) return;
@@ -189,9 +226,9 @@ export function PayCommandCenter() {
     {tab==='paycheck' && <>
       <div className="grid grid-cols-2 gap-2"><button className={button+' text-[var(--amber)]'} onClick={()=>setFormOpen(v=>!v)}>{formOpen?'Cancel':'＋ Add paycheck'}</button><label className={button+' flex items-center justify-center '+(pdfBusy?'opacity-60':'text-[var(--amber)]')}>{pdfBusy?'Reading PDF…':'Import Kia PDF'}<input className="sr-only" type="file" accept="application/pdf,.pdf" disabled={pdfBusy} onChange={e=>{void importPaystubPdf(e.target.files?.[0]);e.currentTarget.value='';}}/></label></div>
       <div className="flex justify-end"><label className="text-xs text-[var(--text-2)] underline">Import JSON backup<input className="sr-only" type="file" accept=".json,application/json" onChange={e=>void importBackup(e.target.files?.[0])}/></label></div>
-      {pdfReview && <form onSubmit={savePdfReview} className={card+' space-y-3 border-[var(--amber)]/50'}><div><h3 className="font-bold text-[var(--amber)]">Review extracted paystub</h3><p className="mt-1 break-all text-xs text-[var(--text-2)]">{pdfReview.fileName} · extracted locally · not saved yet</p></div><div className="rounded-xl border border-[var(--line)] p-3 text-xs text-[var(--text-2)]"><b className="block mb-1 text-[var(--text)]">Please verify before saving</b>{pdfReview.warnings.map(w=><p key={w} className="mt-1">• {w}</p>)}</div><label><span className={label}>Record type</span><select className={field} value={pdfReview.kind} onChange={e=>setPdfReview(p=>p?({...p,kind:e.target.value as PdfReview['kind']}):p)}><option value="biweekly">Regular biweekly paycheck</option><option value="off-cycle">Off-cycle payment</option></select></label>{pdfReview.kind==='off-cycle'&&<label><span className={label}>Label</span><input className={field} value={pdfReview.label} onChange={e=>setPdfReview(p=>p?({...p,label:e.target.value}):p)}/></label>}<div className="grid grid-cols-2 gap-3">{([['periodStart','Period starts','date'],['periodEnd','Period ends','date'],['payDate','Pay date','date'],['gross','Gross pay','number'],['taxes','Taxes','number'],['deductions','Deductions','number'],['net','Net pay','number'],['rate','Base hourly rate','number'],['week1Hours','Week 1 regular hours','number'],['week2Hours','Week 2 regular hours','number'],['doublePay','Double-pay amount','number'],['overtime','Current-period overtime amount','number']] as [keyof PdfReview,string,string][]).map(([k,l,t])=><label key={k}><span className={label}>{l}</span><input required={['periodStart','periodEnd','payDate','gross','net'].includes(k)} className={field} type={t} step={t==='number'?'0.01':undefined} value={String(pdfReview[k] ?? '')} onChange={e=>setPdfReview(p=>p?({...p,[k]:e.target.value}):p)}/></label>)}</div><div className="flex gap-2"><button type="button" className={button+' flex-1'} onClick={()=>setPdfReview(null)}>Cancel import</button><button className="min-h-11 flex-1 rounded-xl bg-[var(--amber)] px-3 text-sm font-bold text-black" type="submit">Review & save paycheck</button></div></form>}
+      {pdfReview && <form onSubmit={savePdfReview} className={card+' space-y-3 border-[var(--amber)]/50'}><div><h3 className="font-bold text-[var(--amber)]">Review extracted paystub</h3><p className="mt-1 break-all text-xs text-[var(--text-2)]">{pdfReview.fileName} · extracted locally · not saved yet</p></div><div className="rounded-xl border border-[var(--line)] p-3 text-xs text-[var(--text-2)]"><b className="block mb-1 text-[var(--text)]">Please verify before saving</b>{pdfReview.warnings.map(w=><p key={w} className="mt-1">• {w}</p>)}</div><label><span className={label}>Record type</span><select className={field} value={pdfReview.kind} onChange={e=>setPdfReview(p=>p?({...p,kind:e.target.value as PdfReview['kind']}):p)}><option value="biweekly">Regular biweekly paycheck</option><option value="off-cycle">Off-cycle payment</option></select></label>{pdfReview.kind==='off-cycle'&&<label><span className={label}>Label</span><input className={field} value={pdfReview.label} onChange={e=>setPdfReview(p=>p?({...p,label:e.target.value}):p)}/></label>}<div className="grid grid-cols-2 gap-3">{([['periodStart','Period starts','date'],['periodEnd','Period ends','date'],['payDate','Pay date','date'],['gross','Gross pay','number'],['taxes','Taxes','number'],['deductions','Deductions','number'],['net','Net pay','number'],['rate','Base hourly rate','number'],['week1Hours','Week 1 regular hours','number'],['week2Hours','Week 2 regular hours','number'],['doublePay','Double-pay amount','number'],['overtime','Current-period overtime amount','number']] as [keyof PdfReview,string,string][]).map(([k,l,t])=><label key={k}><span className={label}>{l}</span><input required={['periodStart','periodEnd','payDate','gross','net'].includes(k)} className={field} type={t} step={t==='number'?'0.01':undefined} value={String(pdfReview[k] ?? '')} onChange={e=>setPdfReview(p=>p?({...p,[k]:e.target.value}):p)}/></label>)}</div><div className={card+' space-y-2'}><h4 className="font-bold">Extracted paystub line items ({pdfReview.lineItems.length})</h4><p className="text-xs text-[var(--text-2)]">Line rows detected across all PDF pages are preserved as printed. Confirm the rows against the original before saving.</p><div className="max-h-72 space-y-2 overflow-auto">{pdfReview.lineItems.map((item,i)=><div key={i} className="border-t border-[var(--line)] pt-2"><p className="text-[10px] font-bold uppercase text-[var(--amber)]">{item.section}</p><p className="break-words text-sm">{item.rawText}</p></div>)}</div></div><div className="flex gap-2"><button type="button" className={button+' flex-1'} onClick={()=>setPdfReview(null)}>Cancel import</button><button className="min-h-11 flex-1 rounded-xl bg-[var(--amber)] px-3 text-sm font-bold text-black" type="submit">Review & save paycheck</button></div></form>}
       {formOpen && <form onSubmit={addCheck} className={card+' space-y-3'}><h3 className="font-bold">New paycheck record</h3><p className="text-xs text-[var(--text-2)]">Enter the two weekly regular-time lines separately. Amounts are in dollars; don't enter identifying information from the stub.</p><div className="grid grid-cols-2 gap-3">{([['periodStart','Period starts','date'],['periodEnd','Period ends','date'],['payDate','Pay date','date'],['gross','Gross pay','number'],['taxes','Taxes','number'],['deductions','Deductions','number'],['net','Net pay','number'],['rate','Base hourly rate','number'],['week1Hours','Week 1 regular hours','number'],['week2Hours','Week 2 regular hours','number'],['doublePay','Double-pay amount','number'],['overtime','Overtime amount','number']] as [keyof typeof draft,string,string][]).map(([k,l,t])=><label key={k}><span className={label}>{l}</span><input required={['periodStart','periodEnd','payDate','gross','net'].includes(k)} className={field} type={t} step={t==='number'?'0.01':undefined} value={draft[k]} onChange={e=>setDraft(d=>({...d,[k]:e.target.value}))}/></label>)}</div><button className="min-h-11 w-full rounded-xl bg-[var(--amber)] font-bold text-black" type="submit">Save paycheck</button></form>}
-      {checks.length===0?<div className={card}><p className="font-semibold">No paychecks recorded</p><p className="mt-1 text-sm text-[var(--text-2)]">Add a paycheck or import a JSON backup. A PDF importer is planned separately so extracted numbers can be reviewed before saving.</p></div>:checks.map(c=><article key={c.id} className={card}><div className="flex items-start justify-between gap-2"><div><h3 className="font-bold">{money(c.net)} net</h3><p className="text-xs text-[var(--text-2)]">{c.kind==='off-cycle'?(c.label||'Off-cycle payment'):date(c.periodStart)+' – '+date(c.periodEnd)} · paid {date(c.payDate)}</p></div><button className="text-xs text-[var(--critical)]" onClick={()=>{if(confirm('Delete this paycheck record?'))setData(d=>({...d,checks:d.checks.filter(x=>x.id!==c.id)}))}}>Delete</button></div><div className="mt-3 grid grid-cols-2 gap-2 text-sm"><p>Gross <b>{money(c.gross)}</b></p><p>Taxes <b>{money(c.taxes)}</b></p><p>Deductions <b>{money(c.deductions)}</b></p><p>Double pay <b>{money(c.doublePay)}</b></p><p>Overtime <b>{money(c.overtime)}</b></p><p>Week 1 / 2 <b>{c.week1Hours}h / {c.week2Hours}h</b></p></div><p className={'mt-2 text-xs '+(Math.abs(c.gross-c.taxes-c.deductions-c.net)>.02?'text-[var(--critical)]':'text-[var(--gold)]')}>{Math.abs(c.gross-c.taxes-c.deductions-c.net)>.02?'Needs reconciliation':'Gross − taxes − deductions = net'}</p></article>)}
+      {checks.length===0?<div className={card}><p className="font-semibold">No paychecks recorded</p><p className="mt-1 text-sm text-[var(--text-2)]">Add a paycheck or import a JSON backup. A PDF importer is planned separately so extracted numbers can be reviewed before saving.</p></div>:checks.map(c=><article key={c.id} className={card}><div className="flex items-start justify-between gap-2"><div><h3 className="font-bold">{money(c.net)} net</h3><p className="text-xs text-[var(--text-2)]">{c.kind==='off-cycle'?(c.label||'Off-cycle payment'):date(c.periodStart)+' – '+date(c.periodEnd)} · paid {date(c.payDate)}</p></div><button className="text-xs text-[var(--critical)]" onClick={()=>{if(confirm('Delete this paycheck record?'))setData(d=>({...d,checks:d.checks.filter(x=>x.id!==c.id)}))}}>Delete</button></div><div className="mt-3 grid grid-cols-2 gap-2 text-sm"><p>Gross <b>{money(c.gross)}</b></p><p>Taxes <b>{money(c.taxes)}</b></p><p>Deductions <b>{money(c.deductions)}</b></p><p>Double pay <b>{money(c.doublePay)}</b></p><p>Overtime <b>{money(c.overtime)}</b></p><p>Week 1 / 2 <b>{c.week1Hours}h / {c.week2Hours}h</b></p></div><p className={'mt-2 text-xs '+(Math.abs(c.gross-c.taxes-c.deductions-c.net)>.02?'text-[var(--critical)]':'text-[var(--gold)]')}>{Math.abs(c.gross-c.taxes-c.deductions-c.net)>.02?'Needs reconciliation':'Gross − taxes − deductions = net'}</p>{c.lineItems?.length ? <details className="mt-3"><summary className="cursor-pointer text-sm font-semibold text-[var(--amber)]">Paystub line items ({c.lineItems.length})</summary><div className="mt-2 space-y-2">{c.lineItems.map((item,i)=><div key={i} className="border-t border-[var(--line)] pt-2"><p className="text-[10px] font-bold uppercase text-[var(--text-2)]">{item.section}</p><p className="break-words text-xs">{item.rawText}</p></div>)}</div></details> : null}</article>)}
     </>}
     {tab==='plan' && <>
       <div className="flex items-center justify-between"><div><h3 className="font-bold">Bills & obligations</h3><p className="text-xs text-[var(--text-2)]">Actual due dates, not day-of-month guesses.</p></div><button className={button+' text-[var(--amber)]'} onClick={()=>setBillOpen(v=>!v)}>{billOpen?'Cancel':'＋ Add bill'}</button></div>

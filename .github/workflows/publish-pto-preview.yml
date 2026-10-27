@@ -1,4 +1,4 @@
-name: Build and deploy PTO-enabled isolated preview (ledger sync)
+name: Build and deploy PTO-enabled isolated preview (ledger sync + confirmed carryover)
 
 on:
   push:

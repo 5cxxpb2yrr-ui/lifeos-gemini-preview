@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 
-type Tab = 'home' | 'paycheck' | 'plan' | 'year';
+type Tab = 'home' | 'paycheck' | 'plan' | 'year' | 'pto';
+type PtoKind = 'used' | 'preschedule' | 'holiday-earned' | 'holiday-used' | 'epto';
+type PtoEntry = { id: string; date: string; kind: PtoKind; hours: number; note: string };
+const PTO_KEY = 'lifeos.financial-command-center.pto.v1';
+const PTO_AWARD = (year: number) => year <= 2026 ? (year < 2026 ? 176 : 176) : Math.min(184 + (year - 2027) * 8, 200);
+const PTO_INCREMENTS = [4, 6, 8, 12];
 type PayLineItem = { section: 'earnings' | 'taxes' | 'preTax' | 'postTax' | 'deductions' | 'other'; label: string; rawText: string; amount?: number };
 type Check = {
   kind?: 'biweekly' | 'off-cycle';
@@ -51,6 +56,13 @@ const label = 'mb-1 block text-xs text-[var(--text-2)]';
 
 export function PayCommandCenter() {
   const [tab, setTab] = useState<Tab>('home');
+  const [ptoEntries, setPtoEntries] = useState<PtoEntry[]>(() => { try { const raw = localStorage.getItem(PTO_KEY); const value = raw ? JSON.parse(raw) : []; return Array.isArray(value) ? value : []; } catch { return []; } });
+  const [ptoYear, setPtoYear] = useState(new Date().getFullYear());
+  const [ptoKind, setPtoKind] = useState<PtoKind>('used');
+  const [ptoDate, setPtoDate] = useState(iso(new Date()));
+  const [ptoHours, setPtoHours] = useState('8');
+  const [ptoMinutes, setPtoMinutes] = useState('35');
+  const [ptoNote, setPtoNote] = useState('');
   const [data, setData] = useState<FinanceData>(load);
   const [formOpen, setFormOpen] = useState(false);
   const [billOpen, setBillOpen] = useState(false);
@@ -62,6 +74,31 @@ export function PayCommandCenter() {
   const [draft, setDraft] = useState({ periodStart: '', periodEnd: '', payDate: '', gross: '', taxes: '', deductions: '', net: '', rate: '41.64', week1Hours: '', week2Hours: '', doublePay: '', overtime: '' });
   const [billDraft, setBillDraft] = useState({ title: '', amount: '', dueDate: '' });
   useEffect(() => { localStorage.setItem(KEY, JSON.stringify(data)); }, [data]);
+  useEffect(() => { localStorage.setItem(PTO_KEY, JSON.stringify(ptoEntries)); }, [ptoEntries]);
+  const yearPtoEntries = ptoEntries.filter(entry => Number(entry.date.slice(0, 4)) === ptoYear);
+  const ptoUsed = yearPtoEntries.filter(entry => entry.kind === 'used').reduce((sum, entry) => sum + entry.hours, 0);
+  const ptoPrescheduled = yearPtoEntries.filter(entry => entry.kind === 'preschedule').reduce((sum, entry) => sum + entry.hours, 0);
+  const ptoCurrentBalance = PTO_AWARD(ptoYear) - ptoUsed;
+  const ptoProjectedBalance = ptoCurrentBalance - ptoPrescheduled;
+  const holidayEarned = yearPtoEntries.filter(entry => entry.kind === 'holiday-earned').reduce((sum, entry) => sum + entry.hours, 0);
+  const holidayUsed = yearPtoEntries.filter(entry => entry.kind === 'holiday-used').reduce((sum, entry) => sum + entry.hours, 0);
+  const holidayBalance = holidayEarned - holidayUsed;
+  const eptoMinutes = yearPtoEntries.filter(entry => entry.kind === 'epto').reduce((sum, entry) => sum + Math.round(entry.hours * 60), 0);
+  const savePtoEntry = (event: FormEvent) => {
+    event.preventDefault();
+    const hours = Number(ptoHours);
+    const minutes = Number(ptoMinutes);
+    if (!ptoDate) { setNotice('Choose a date for the PTO entry.'); return; }
+    if (ptoKind === 'epto') {
+      if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) { setNotice('EPTO must be a whole number of minutes between 1 and 1,440.'); return; }
+      setPtoEntries(entries => [...entries, { id: id(), date: ptoDate, kind: ptoKind, hours: minutes / 60, note: ptoNote.trim() }]);
+    } else {
+      if (!Number.isFinite(hours) || hours <= 0) { setNotice('Enter a positive number of hours.'); return; }
+      if ((ptoKind === 'used' || ptoKind === 'preschedule' || ptoKind === 'holiday-used') && !PTO_INCREMENTS.includes(hours)) { setNotice('PTO use, preschedule, and holiday-bank use must be 4, 6, 8, or 12 hours.'); return; }
+      setPtoEntries(entries => [...entries, { id: id(), date: ptoDate, kind: ptoKind, hours, note: ptoNote.trim() }]);
+    }
+    setPtoNote(''); setNotice('PTO ledger entry saved. Balances recalculate from the ledger.');
+  };
   const checks = useMemo(() => [...data.checks].sort((a,b) => b.payDate.localeCompare(a.payDate)), [data.checks]);
   const latest = checks[0];
   const totals = useMemo(() => checks.reduce((a,c) => ({ gross:a.gross+c.gross, taxes:a.taxes+c.taxes, deductions:a.deductions+c.deductions, net:a.net+c.net, doublePay:a.doublePay+c.doublePay, overtime:a.overtime+c.overtime }), {gross:0,taxes:0,deductions:0,net:0,doublePay:0,overtime:0}), [checks]);
@@ -238,7 +275,7 @@ export function PayCommandCenter() {
       <button className={button + ' text-[var(--amber)]'} onClick={exportBackup}>Export</button>
     </header>
     <nav className="flex gap-1 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-1" aria-label="Financial command center tabs">
-      <TabButton value="home">Home</TabButton><TabButton value="paycheck">Paycheck</TabButton><TabButton value="plan">Plan</TabButton><TabButton value="year">Year</TabButton>
+      <TabButton value="home">Home</TabButton><TabButton value="paycheck">Paycheck</TabButton><TabButton value="plan">Plan</TabButton><TabButton value="year">Year</TabButton><TabButton value="pto">PTO</TabButton>
     </nav>
     {notice && <div role="status" className="rounded-xl border border-[var(--line)] px-3 py-2 text-xs text-[var(--text-2)]">{notice}<button className="ml-2 text-[var(--amber)]" onClick={()=>setNotice('')}>Dismiss</button></div>}
     {tab==='home' && <>
@@ -268,6 +305,17 @@ export function PayCommandCenter() {
       <div className={card}><h3 className="font-bold">History coverage</h3><p className="mt-1 text-sm text-[var(--text-2)]">{checks.length} paycheck records · sums shown are only the records imported here, not employer YTD totals.</p>{checks.length>0&&<div className="mt-3 space-y-2">{checks.map(c=><div key={c.id} className="flex justify-between gap-2 border-t border-[var(--line)] pt-2 text-sm"><span>{date(c.payDate)}</span><span>{money(c.gross)} gross</span><b>{money(c.net)}</b></div>)}</div>}</div>
       {latest?.reportedYtd && <div className={card}><h3 className="font-bold">Latest employer-reported YTD</h3><p className="mt-1 text-xs text-[var(--text-2)]">Reported on the latest imported paystub dated {date(latest.payDate)}. This is kept separate from calculated sums.</p><div className="mt-3 grid grid-cols-2 gap-3 text-sm"><p>Gross <b>{money(latest.reportedYtd.gross)}</b></p><p>Net <b>{money(latest.reportedYtd.net)}</b></p><p>Taxes <b>{money(latest.reportedYtd.taxes)}</b></p><p>Deductions <b>{money(latest.reportedYtd.deductions)}</b></p></div><p className="mt-3 text-xs text-[var(--text-2)]">Imported-check sum vs reported YTD — gross {money(totals.gross-latest.reportedYtd.gross)}, net {money(totals.net-latest.reportedYtd.net)}. Any difference needs investigation before forecasting.</p></div>}
       <div className={card}><h3 className="font-bold">Year-end projection</h3><p className="mt-1 text-xs text-[var(--text-2)]">Projection stays unavailable until enough dated paycheck records exist. This prevents a single check or stale hardcoded number from being presented as a forecast.</p>{checks.length>=3&&<p className="mt-2 text-sm">Average recorded net per check: <b>{money(totals.net/checks.length)}</b>. This is a historical average, not a guaranteed future deposit.</p>}</div>
+    </>}
+
+    {tab==='pto' && <>
+      <div className={card+' space-y-3'}>
+        <div className="flex items-start justify-between gap-3"><div><h3 className="font-bold">PTO & holiday bank</h3><p className="mt-1 text-xs text-[var(--text-2)]">Balances are calculated from ledger entries saved in this browser.</p></div><label className="w-28"><span className={label}>Award year</span><select className={field} value={ptoYear} onChange={e=>setPtoYear(Number(e.target.value))}>{Array.from({length:9},(_,i)=>new Date().getFullYear()-3+i).map(year=><option key={year} value={year}>{year}</option>)}</select></label></div>
+        <div className="grid grid-cols-2 gap-2"><div className={card}><p className="text-xs text-[var(--text-2)]">Annual award</p><p className="mt-1 text-2xl font-extrabold text-[var(--amber)]">{PTO_AWARD(ptoYear)} h</p></div><div className={card}><p className="text-xs text-[var(--text-2)]">Current balance</p><p className="mt-1 text-2xl font-extrabold">{ptoCurrentBalance} h</p><p className="text-xs text-[var(--text-2)]">Award − PTO used</p></div><div className={card}><p className="text-xs text-[var(--text-2)]">Prescheduled</p><p className="mt-1 text-2xl font-extrabold">{ptoPrescheduled} h</p><p className="text-xs text-[var(--text-2)]">Does not reduce current balance</p></div><div className={card}><p className="text-xs text-[var(--text-2)]">Projected balance</p><p className={'mt-1 text-2xl font-extrabold '+(ptoProjectedBalance<0?'text-[var(--critical)]':'text-[var(--gold)]')}>{ptoProjectedBalance} h</p><p className="text-xs text-[var(--text-2)]">Current − prescheduled</p></div></div>
+        <div className="grid grid-cols-2 gap-2"><div className={card}><p className="text-xs text-[var(--text-2)]">Holiday bank balance</p><p className="mt-1 text-xl font-extrabold">{holidayBalance} h</p><p className="text-xs text-[var(--text-2)]">Earned {holidayEarned} h · used {holidayUsed} h</p></div><div className={card}><p className="text-xs text-[var(--text-2)]">EPTO recorded</p><p className="mt-1 text-xl font-extrabold">{Math.floor(eptoMinutes/60)}h {String(eptoMinutes%60).padStart(2,'0')}m</p><p className="text-xs text-[var(--text-2)]">Minute-accurate; tracked separately</p></div></div>
+      </div>
+      <form onSubmit={savePtoEntry} className={card+' space-y-3'}><h3 className="font-bold">Add ledger entry</h3><label><span className={label}>Entry type</span><select className={field} value={ptoKind} onChange={e=>setPtoKind(e.target.value as PtoKind)}><option value="used">PTO used</option><option value="preschedule">Prescheduled PTO</option><option value="holiday-earned">Holiday hours banked</option><option value="holiday-used">Holiday-bank hours used</option><option value="epto">EPTO minutes</option></select></label><label><span className={label}>Date</span><input className={field} type="date" required value={ptoDate} onChange={e=>setPtoDate(e.target.value)}/></label>{ptoKind==='epto'?<label><span className={label}>EPTO duration (minutes)</span><input className={field} type="number" min="1" max="1440" step="1" required value={ptoMinutes} onChange={e=>setPtoMinutes(e.target.value)}/><span className="mt-1 block text-xs text-[var(--text-2)]">Example: 35 minutes late = 35 EPTO minutes. The remaining scheduled hours are not automatically inferred.</span></label>:<label><span className={label}>{ptoKind==='holiday-earned'?'Holiday hours banked':'Hours'}</span><input className={field} type="number" min="0.01" step="0.01" required value={ptoHours} onChange={e=>setPtoHours(e.target.value)}/>{['used','preschedule','holiday-used'].includes(ptoKind)&&<span className="mt-1 block text-xs text-[var(--text-2)]">Allowed increments: 4, 6, 8, or 12 hours.</span>}</label>}<label><span className={label}>Note (optional)</span><input className={field} value={ptoNote} onChange={e=>setPtoNote(e.target.value)} placeholder="Short description"/></label><button type="submit" className="min-h-11 w-full rounded-xl bg-[var(--amber)] px-3 font-bold text-black">Save entry</button></form>
+      <div className={card}><h3 className="font-bold">{ptoYear} ledger</h3>{yearPtoEntries.length===0?<p className="mt-2 text-sm text-[var(--text-2)]">No entries recorded for this year yet.</p>:<div className="mt-2 space-y-2">{[...yearPtoEntries].sort((a,b)=>b.date.localeCompare(a.date)).map(entry=><div key={entry.id} className="flex items-start justify-between gap-3 border-t border-[var(--line)] pt-2"><div className="min-w-0"><p className="text-sm font-semibold">{{used:'PTO used',preschedule:'Prescheduled PTO','holiday-earned':'Holiday banked','holiday-used':'Holiday bank used',epto:'EPTO'}[entry.kind]}</p><p className="text-xs text-[var(--text-2)]">{date(entry.date)}{entry.note?' · '+entry.note:''}</p></div><div className="shrink-0 text-right"><p className="text-sm font-bold">{entry.kind==='epto'?Math.floor(Math.round(entry.hours*60)/60)+'h '+String(Math.round(entry.hours*60)%60).padStart(2,'0')+'m':entry.hours+' h'}</p><button type="button" className="mt-1 text-xs text-[var(--critical)]" onClick={()=>setPtoEntries(entries=>entries.filter(item=>item.id!==entry.id))}>Delete</button></div></div>)}</div>}</div>
+      <div className={card}><h3 className="font-bold">Award rules and limitations</h3><p className="mt-1 text-xs text-[var(--text-2)]">Annual awards: 176 hours in 2026, 184 in 2027, 192 in 2028, 200 in 2029 and later. No accrual is modeled. Carryover and prior-year adjustments are not assumed because their rules have not been confirmed. EPTO is tracked separately and does not change the PTO balance in this version.</p></div>
     </>}
   </section>;
 }

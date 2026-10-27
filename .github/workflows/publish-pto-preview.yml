@@ -1,5 +1,4 @@
-name: Build PTO feature into isolated preview
-# Rebuild after adding a direct PTO entry point to the isolated preview.
+name: Build and deploy PTO-enabled isolated preview
 
 on:
   push:
@@ -11,6 +10,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: pto-isolated-preview-publish
@@ -19,6 +20,9 @@ concurrency:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Check out PTO feature branch
         uses: actions/checkout@v4
@@ -60,3 +64,15 @@ jobs:
             exit 0
           }
           git push origin HEAD:preview
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload PTO-enabled Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: source/dist
+
+      - name: Deploy PTO-enabled isolated preview
+        id: deployment
+        uses: actions/deploy-pages@v4

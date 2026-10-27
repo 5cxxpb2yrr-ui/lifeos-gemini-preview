@@ -63,4 +63,5 @@ jobs:
         uses: actions/deploy-pages@v4
 
 # Deployment is initiated only from the designated isolated preview branch.
-# Its build checks out the validated calendar feature branch.
+# Its build checks out the latest validated calendar feature branch.
+# Feature branch commits never deploy directly to GitHub Pages.

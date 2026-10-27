@@ -27,6 +27,7 @@ const entities: Entity[] = [
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('mission');
+  const [financeInitialTab, setFinanceInitialTab] = useState<'home' | 'pto'>('home');
   const [draft, setDraft] = useState('');
   const [captureOpen, setCaptureOpen] = useState(false);
   const [detailRec, setDetailRec] = useState<Rec | null>(null);
@@ -53,7 +54,7 @@ export default function App() {
     <div className="mx-auto max-w-[860px] px-3.5 pb-32 pt-3 lg:ml-24 lg:max-w-none lg:pr-[360px]">
       <header className="mb-4 flex items-center justify-between gap-3">
         <div><h1 className="text-3xl font-bold">Life<span className="text-[var(--amber)]">OS</span></h1><p className="text-[var(--text-2)]">Mission Control · Your life, in view</p></div>
-        <button onClick={() => setCaptureOpen(true)} className="min-h-11 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] px-4 font-semibold text-[var(--amber)]">＋ Capture</button>
+        <div className="flex gap-2"><button onClick={() => { setFinanceInitialTab('pto'); setTab('finance'); }} className="min-h-11 rounded-2xl border border-[var(--amber)] bg-[var(--surface-2)] px-3 font-semibold text-[var(--amber)]">PTO</button><button onClick={() => setCaptureOpen(true)} className="min-h-11 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] px-4 font-semibold text-[var(--amber)]">＋ Capture</button></div>
       </header>
       <main className="mx-auto max-w-[860px]">
         {tab === 'mission' && (<>
@@ -63,7 +64,7 @@ export default function App() {
           <Section full><RecommendationCard rec={esc} compact onExpand={() => setDetailRec(esc)} variant="risk" label="⚠ AT RISK" /></Section>
           <ReviewQueue items={[{ id: '1', title: 'Review Tax Return Draft', note: 'Example recommendation · due next week' }, { id: '2', title: 'Review Estate Planning Documents', note: 'Example recommendation · last reviewed 18 months ago' }]} />
         </>)}
-        {tab === 'finance' && <PayCommandCenter />}
+        {tab === 'finance' && <PayCommandCenter initialTab={financeInitialTab} />}
         {tab === 'inbox' && <Inbox people={people} />}
         {tab === 'entities' && <Entities entities={entities} />}
         {tab === 'search' && <Search items={searchable} onOpen={openSearchResult} />}
@@ -88,7 +89,7 @@ export default function App() {
           <Search items={searchable} onOpen={(id) => { setCaptureOpen(false); openSearchResult(id); }} />
         </section>
       </div>}
-      <BottomNavigation tab={tab} inboxCount={inbox.length} onChange={(nextTab) => { if (nextTab === 'search') setCaptureOpen(true); else setTab(nextTab); }} />
+      <BottomNavigation tab={tab} inboxCount={inbox.length} onChange={(nextTab) => { if (nextTab === 'search') setCaptureOpen(true); else { if (nextTab === 'finance') setFinanceInitialTab('home'); setTab(nextTab); } }} />
     </div>
   );
 }

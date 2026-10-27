@@ -33,9 +33,8 @@ jobs:
       - name: Install and verify
         working-directory: source
         run: |
-          npm ci
+          npm install
           npm run verify
-          npm run build
 
       - name: Check out isolated preview branch
         uses: actions/checkout@v4

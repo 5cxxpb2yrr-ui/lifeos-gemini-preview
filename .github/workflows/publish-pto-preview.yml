@@ -1,4 +1,5 @@
 name: Build PTO feature into isolated preview
+# Rebuild after adding a direct PTO entry point to the isolated preview.
 
 on:
   push:

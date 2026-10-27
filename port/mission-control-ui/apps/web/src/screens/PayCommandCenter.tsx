@@ -104,7 +104,6 @@ export function PayCommandCenter({ initialTab = 'home' }: { initialTab?: Tab }) 
   useEffect(() => { localStorage.setItem(PTO_KEY, JSON.stringify(ptoEntries)); }, [ptoEntries]);
   useEffect(() => { localStorage.setItem(SHIFT_KEY, JSON.stringify(shiftDays)); }, [shiftDays]);
   const selectedShift = shiftDays.find(day => day.date === selectedShiftDate) ?? null;
-  const shiftRate = latest?.rate || 41.64;
   const shiftTotals = shiftDays.reduce((sum, day) => ({ regular: sum.regular + day.regular, doubleTime: sum.doubleTime + day.doubleTime, overtime: sum.overtime + day.overtime, pto: sum.pto + day.pto, epto: sum.epto + day.epto }), { regular: 0, doubleTime: 0, overtime: 0, pto: 0, epto: 0 });
   const shiftGrossEstimate = shiftTotals.regular * shiftRate + shiftTotals.doubleTime * shiftRate * 2 + shiftTotals.overtime * shiftRate * 1.5 + shiftTotals.pto * shiftRate + shiftTotals.epto * shiftRate;
   const saveShiftDraft = (event: FormEvent) => { event.preventDefault(); if (!shiftDraft) return; const hours = [shiftDraft.regular, shiftDraft.doubleTime, shiftDraft.overtime, shiftDraft.pto, shiftDraft.epto]; if (hours.some(value => !Number.isFinite(value) || value < 0 || value > 24)) { setNotice('Each hour category must be between 0 and 24.'); return; } if (hours.reduce((a, b) => a + b, 0) > 24) { setNotice('Combined paid-hour categories cannot exceed 24 hours in one day.'); return; } setShiftDays(days => days.map(day => day.date === shiftDraft.date ? shiftDraft : day)); setSelectedShiftDate(null); setShiftDraft(null); setNotice('Shift hours saved locally.'); };
@@ -139,6 +138,7 @@ export function PayCommandCenter({ initialTab = 'home' }: { initialTab?: Tab }) 
   };
   const checks = useMemo(() => [...data.checks].sort((a,b) => b.payDate.localeCompare(a.payDate)), [data.checks]);
   const latest = checks[0];
+  const shiftRate = latest?.rate || 41.64;
   const totals = useMemo(() => checks.reduce((a,c) => ({ gross:a.gross+c.gross, taxes:a.taxes+c.taxes, deductions:a.deductions+c.deductions, net:a.net+c.net, doublePay:a.doublePay+c.doublePay, overtime:a.overtime+c.overtime }), {gross:0,taxes:0,deductions:0,net:0,doublePay:0,overtime:0}), [checks]);
   const next = nextPayday();
   const deductionSections: PayLineItem['section'][] = ['preTax', 'postTax', 'deductions'];

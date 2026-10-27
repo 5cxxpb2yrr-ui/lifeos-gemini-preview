@@ -74,7 +74,7 @@ const button = 'min-h-11 rounded-xl border border-[var(--line)] px-3 text-sm fon
 const field = 'min-h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 text-sm text-[var(--text)]';
 const label = 'mb-1 block text-xs text-[var(--text-2)]';
 
-export function PayCommandCenter({ initialTab = 'home' }: { initialTab?: Tab }) {
+export function PayCommandCenter({ initialTab = 'schedule' }: { initialTab?: Tab }) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [ptoEntries, setPtoEntries] = useState<PtoEntry[]>(() => { try { const raw = localStorage.getItem(PTO_KEY); if (raw !== null) { const value = JSON.parse(raw); return Array.isArray(value) ? value as PtoEntry[] : []; } return [...IMPORTED_PTO_ENTRIES]; } catch { return [...IMPORTED_PTO_ENTRIES]; } });
   const [ptoYear, setPtoYear] = useState(new Date().getFullYear());
@@ -313,7 +313,7 @@ export function PayCommandCenter({ initialTab = 'home' }: { initialTab?: Tab }) 
       <button className={button + ' text-[var(--amber)]'} onClick={exportBackup}>Export</button>
     </header>
     <nav className="flex gap-1 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-1" aria-label="Financial command center tabs">
-      <TabButton value="home">Home</TabButton><TabButton value="paycheck">Paycheck</TabButton><TabButton value="plan">Plan</TabButton><TabButton value="year">Year</TabButton><TabButton value="pto">PTO</TabButton><TabButton value="schedule">Schedule</TabButton>
+      <TabButton value="home">Home</TabButton><TabButton value="paycheck">Paycheck</TabButton><TabButton value="plan">Plan</TabButton><TabButton value="year">Year</TabButton><TabButton value="pto">PTO</TabButton><TabButton value="schedule">Calendar</TabButton>
     </nav>
     {notice && <div role="status" className="rounded-xl border border-[var(--line)] px-3 py-2 text-xs text-[var(--text-2)]">{notice}<button className="ml-2 text-[var(--amber)]" onClick={()=>setNotice('')}>Dismiss</button></div>}
     {tab==='home' && <>

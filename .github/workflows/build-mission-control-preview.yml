@@ -24,8 +24,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout isolated branch
+      - name: Checkout validated calendar feature branch
         uses: actions/checkout@v4
+        with:
+          ref: feat/pto-ledger-and-awards
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -60,4 +62,5 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-# CI and Pages deployment intentionally run only for this isolated preview branch.
+# Deployment is initiated only from the designated isolated preview branch.
+# Its build checks out the validated calendar feature branch.

@@ -27,7 +27,7 @@ const entities: Entity[] = [
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('mission');
-  const [financeInitialTab, setFinanceInitialTab] = useState<'home' | 'pto'>('home');
+  const [financeInitialTab, setFinanceInitialTab] = useState<'home' | 'pto' | 'schedule'>('schedule');
   const [draft, setDraft] = useState('');
   const [captureOpen, setCaptureOpen] = useState(false);
   const [detailRec, setDetailRec] = useState<Rec | null>(null);
@@ -89,7 +89,7 @@ export default function App() {
           <Search items={searchable} onOpen={(id) => { setCaptureOpen(false); openSearchResult(id); }} />
         </section>
       </div>}
-      <BottomNavigation tab={tab} inboxCount={inbox.length} onChange={(nextTab) => { if (nextTab === 'search') setCaptureOpen(true); else { if (nextTab === 'finance') setFinanceInitialTab('home'); setTab(nextTab); } }} />
+      <BottomNavigation tab={tab} inboxCount={inbox.length} onChange={(nextTab) => { if (nextTab === 'search') setCaptureOpen(true); else { if (nextTab === 'finance') setFinanceInitialTab('schedule'); setTab(nextTab); } }} />
     </div>
   );
 }

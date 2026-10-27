@@ -58,8 +58,8 @@ const button = 'min-h-11 rounded-xl border border-[var(--line)] px-3 text-sm fon
 const field = 'min-h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 text-sm text-[var(--text)]';
 const label = 'mb-1 block text-xs text-[var(--text-2)]';
 
-export function PayCommandCenter() {
-  const [tab, setTab] = useState<Tab>('home');
+export function PayCommandCenter({ initialTab = 'home' }: { initialTab?: Tab }) {
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [ptoEntries, setPtoEntries] = useState<PtoEntry[]>(() => { try { const raw = localStorage.getItem(PTO_KEY); const value = raw ? JSON.parse(raw) : []; return Array.isArray(value) ? value : []; } catch { return []; } });
   const [ptoYear, setPtoYear] = useState(new Date().getFullYear());
   const [ptoKind, setPtoKind] = useState<PtoKind>('used');

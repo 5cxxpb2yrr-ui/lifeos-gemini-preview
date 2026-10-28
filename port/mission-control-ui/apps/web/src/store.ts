@@ -85,9 +85,9 @@ export const useStore = create<State>()(persist((set) => ({
   capture: (raw, personId) => {
     const text = raw.trim();
     if (!text) return;
-    const tags = [...text.matchAll(/(?:^|\\s)@([\\w.-]+)/g)].map(match => match[1].replace(/[._-]+/g, ' ').trim()).filter(Boolean);
+    const tags = [...text.matchAll(/(?:^|\s)@([\w.-]+)/g)].map(match => match[1].replace(/[._-]+/g, ' ').trim()).filter(Boolean);
     set((state) => {
-      const newPeople = tags.filter(tag => !state.people.some(p => p.name.toLowerCase() === tag.toLowerCase() || p.name.toLowerCase().replace(/\\s/g, '') === tag.toLowerCase().replace(/\\s/g, ''))).map(name => ({ id: makeId(), name }));
+      const newPeople = tags.filter(tag => !state.people.some(p => p.name.toLowerCase() === tag.toLowerCase() || p.name.toLowerCase().replace(/\s/g, '') === tag.toLowerCase().replace(/\s/g, ''))).map(name => ({ id: makeId(), name }));
       return { people: [...state.people, ...newPeople], inbox: [{ id: makeId(), text, createdAt: now(), ...(personId ? { personId } : {}) }, ...state.inbox] };
     });
   },

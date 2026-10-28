@@ -101,7 +101,9 @@ export function PayCommandCenter({ initialTab = 'schedule' }: { initialTab?: Tab
     return Array.from({ length: 14 }, (_, i) => {
       const d = new Date(start.getTime() + i * 86400000);
       const key = iso(d);
-      if (selectedCrew === 'E' && key === '2026-10-28') return { ...defaultShiftDay(d, 'E'), regular: 0, doubleTime: 0, overtime: 0, pto: 0, epto: 0 };\n      if (selectedCrew === 'E' && key === '2026-10-29') return { ...defaultShiftDay(d, 'E'), regular: 12, doubleTime: 0, overtime: 0 };\n      if (selectedCrew === 'E' && key === '2026-10-30') return { ...defaultShiftDay(d, 'E'), regular: 12, doubleTime: 0, overtime: 0 };
+      if (selectedCrew === 'E' && key === '2026-10-28') return { ...defaultShiftDay(d, 'E'), regular: 0, doubleTime: 0, overtime: 0, pto: 0, epto: 0 };
+      if (selectedCrew === 'E' && key === '2026-10-29') return { ...defaultShiftDay(d, 'E'), regular: 12, doubleTime: 0, overtime: 0 };
+      if (selectedCrew === 'E' && key === '2026-10-30') return { ...defaultShiftDay(d, 'E'), regular: 12, doubleTime: 0, overtime: 0 };
       return normalizeSundayShift(shiftDays.find(day => day.date === key) ?? defaultShiftDay(d, selectedCrew));
     });
   }, [periodStart, shiftDays, selectedCrew]);

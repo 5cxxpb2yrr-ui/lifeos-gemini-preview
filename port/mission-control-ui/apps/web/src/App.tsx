@@ -28,7 +28,7 @@ const entities: Entity[] = [
 
 type DecisionCriterion = { id: string; name: string; weight: number; direction: 'higher' | 'lower' };
 type DecisionOption = { id: string; name: string; scores: Record<string, number> };
-type DecisionFrame = { id: string; title: string; objective: string; criteria: DecisionCriterion[]; options: DecisionOption[]; updatedAt: string; status?: 'evaluating' | 'decided' | 'reviewed'; chosenOptionId?: string; decisionRationale?: string; decidedAt?: string; reviewDate?: string; actualOutcome?: string; outcomeRating?: 'better' | 'as-expected' | 'worse'; linkedLoopId?: string };
+type DecisionFrame = { id: string; title: string; objective: string; criteria: DecisionCriterion[]; options: DecisionOption[]; updatedAt: string; status?: 'evaluating' | 'decided' | 'reviewed'; chosenOptionId?: string; decisionRationale?: string; decidedAt?: string; reviewDate?: string; successMetric?: string; targetValue?: string; actualValue?: string; actualOutcome?: string; outcomeRating?: 'better' | 'as-expected' | 'worse'; linkedLoopId?: string };
 const decisionKey = 'lifeos.decision-matrix.v1';
 const seedFrame = (): DecisionFrame => {
   const criteria: DecisionCriterion[] = [
@@ -103,6 +103,17 @@ function DecisionMatrix() {
         <label className="block text-sm font-semibold text-[var(--text-2)]">Decision rationale / assumptions
           <textarea value={active.decisionRationale ?? ''} onChange={e=>patchActive({decisionRationale:e.target.value})} placeholder="Why this option? What assumptions or trade-offs are you accepting?" className="mt-1 min-h-20 w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] p-3 text-[var(--text)]"/>
         </label>
+        <label className="block text-sm font-semibold text-[var(--text-2)]">Success metric
+          <input value={active.successMetric ?? ''} onChange={e=>patchActive({successMetric:e.target.value})} placeholder="e.g. reduce monthly cost, finish by deadline" className="mt-1 min-h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 text-[var(--text)]"/>
+        </label>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <label className="block text-sm font-semibold text-[var(--text-2)]">Target value
+            <input value={active.targetValue ?? ''} onChange={e=>patchActive({targetValue:e.target.value})} placeholder="Expected result" className="mt-1 min-h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 text-[var(--text)]"/>
+          </label>
+          <label className="block text-sm font-semibold text-[var(--text-2)]">Actual value
+            <input value={active.actualValue ?? ''} onChange={e=>patchActive({actualValue:e.target.value})} placeholder="Measured result" className="mt-1 min-h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 text-[var(--text)]"/>
+          </label>
+        </div>
         <label className="block text-sm font-semibold text-[var(--text-2)]">Outcome review date
           <input type="date" value={active.reviewDate ?? ''} onChange={e=>patchActive({reviewDate:e.target.value})} className="mt-1 min-h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 text-[var(--text)]"/>
         </label>

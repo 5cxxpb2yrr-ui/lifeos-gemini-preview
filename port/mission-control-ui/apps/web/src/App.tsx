@@ -18,9 +18,8 @@ const nba: Rec = { id: 'gp', entity: 'Georgia Power', title: 'Contact Georgia Po
 const reg: Rec = { id: 'reg', entity: 'Vehicle', title: 'Renew Vehicle Registration', context: 'Expires in 4 days', impact: 84, confidence: 97, actions: ['Complete'] };
 const ins: Rec = { id: 'ins', entity: 'Insurance', title: 'Choose Insurance Plan', context: 'Enrollment closes in 12 days', recommendation: 'PPO Option', impact: 91, confidence: 82, actions: ['Review Options'] };
 const esc: Rec = { id: 'esc', entity: 'Mortgage servicer', title: 'Mortgage Escrow Shortfall', context: 'Monthly payment may increase by $172.', impact: 96, confidence: 94, actions: ['Review', 'Contact Servicer'] };
-const people: Person[] = [{ id: 'sj', name: 'Sarah Johnson' }];
 const entities: Entity[] = [
-  { id: 'sj', name: 'Sarah Johnson', type: 'Person', open: 1 }, { id: 'veh', name: 'Vehicle', type: 'Asset', open: 1 },
+  { id: 'veh', name: 'Vehicle', type: 'Asset', open: 1 },
   { id: 'mort', name: 'Mortgage servicer', type: 'Account', open: 1 }, { id: 'ins', name: 'Insurance', type: 'Account', open: 1 },
   { id: 'gp', name: 'Georgia Power', type: 'Utility', open: 1 },
 ];
@@ -152,11 +151,12 @@ export default function App() {
   const [draft, setDraft] = useState('');
   const [captureOpen, setCaptureOpen] = useState(false);
   const [detailRec, setDetailRec] = useState<Rec | null>(null);
-  const { inbox, archive, completed, capture } = useStore();
+  const { people, inbox, archive, completed, capture } = useStore();
+  const entityList: Entity[] = [...entities, ...people.map((person) => ({ id: person.id, name: person.name, type: 'Person' as const, open: inbox.filter(loop => loop.personId === person.id).length }))];
   const searchable: Searchable[] = [
     ...[nba, reg, ins, esc].map((r) => ({ id: `rec-${r.id}`, title: r.title, subtitle: `Example recommendation · ${r.entity}`, destination: 'mission' as const })),
     ...people.map((p) => ({ id: `person-${p.id}`, title: p.name, subtitle: 'Person', destination: 'entities' as const })),
-    ...entities.map((entity) => ({ id: `entity-${entity.id}`, title: entity.name, subtitle: `${entity.type} · example data`, destination: 'entities' as const })),
+    ...entityList.map((entity) => ({ id: `entity-${entity.id}`, title: entity.name, subtitle: `${entity.type}${entity.type === 'Person' ? '' : ' · example data'}`, destination: 'entities' as const })),
     ...inbox.map((item) => ({ id: `open-${item.id}`, title: item.text, subtitle: 'Open loop', destination: 'inbox' as const })),
     ...completed.map((item) => ({ id: `completed-${item.id}`, title: item.text, subtitle: 'Completed loop', destination: 'inbox' as const })),
     ...archive.map((item) => ({ id: `archived-${item.id}`, title: item.text, subtitle: 'Archived loop', destination: 'inbox' as const })),
@@ -189,7 +189,7 @@ export default function App() {
         {tab === 'finance' && <PayCommandCenter initialTab={financeInitialTab} />}
         {tab === 'decisions' && <DecisionMatrix />}
         {tab === 'inbox' && <Inbox people={people} />}
-        {tab === 'entities' && <Entities entities={entities} />}
+        {tab === 'entities' && <Entities entities={entityList} />}
         {tab === 'search' && <Search items={searchable} onOpen={openSearchResult} />}
         {tab === 'more' && <More />}
       </main>

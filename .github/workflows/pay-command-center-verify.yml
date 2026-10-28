@@ -1,0 +1,32 @@
+name: Verify Pay Command Center
+on:
+  push:
+    branches:
+      - feat/pto-ledger-and-awards
+  pull_request:
+    branches:
+      - main
+      - feat/pto-ledger-and-awards
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: npm run test:ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build production app
+        run: npm run build

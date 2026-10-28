@@ -24,8 +24,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout isolated branch
+      - name: Checkout isolated feature branch
         uses: actions/checkout@v4
+        with:
+          ref: feat/pto-ledger-and-awards
       - name: Set up Node
         uses: actions/setup-node@v4
         with:

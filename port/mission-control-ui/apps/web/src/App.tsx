@@ -133,6 +133,19 @@ function DecisionMatrix() {
   </section>;
 }
 
+
+function DecisionReviewQueue({ onOpen }: { onOpen: () => void }) {
+  const [frames, setFrames] = useState<DecisionFrame[]>(loadDecisionFrames);
+  const refresh = () => setFrames(loadDecisionFrames());
+  const today = new Date().toISOString().slice(0, 10);
+  const due = frames.filter(frame => frame.reviewDate && frame.reviewDate <= today && frame.status !== 'reviewed' && frame.chosenOptionId);
+  return <section className="mt-4 rounded-3xl border border-[var(--line)] bg-[var(--surface-1)] p-4 sm:p-5">
+    <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--cyan)]">Decision follow-through</p><h2 className="mt-1 text-lg font-bold">Reviews due</h2><p className="mt-1 text-sm text-[var(--text-2)]">Committed decisions whose review date has arrived.</p></div><span className="rounded-xl border border-[var(--line)] px-3 py-2 text-sm font-bold">{due.length}</span></div>
+    {due.length === 0 ? <p className="mt-3 text-sm text-[var(--text-2)]">No committed decisions are due for review. Add a review date to a recorded decision to surface it here.</p> : <div className="mt-3 space-y-2">{due.map(frame => <button key={frame.id} onClick={onOpen} className="w-full rounded-2xl border border-[var(--amber)]/60 bg-[var(--surface-2)] p-3 text-left"><span className="flex items-center justify-between gap-2"><strong>{frame.title || 'Untitled decision'}</strong><span className="shrink-0 text-xs font-bold text-[var(--amber)]">{frame.reviewDate! < today ? 'OVERDUE' : 'DUE TODAY'}</span></span><span className="mt-1 block text-sm text-[var(--text-2)]">Target: {frame.successMetric || 'Review actual outcome'} · Date {frame.reviewDate}</span></button>)}</div>}
+    <button onClick={() => { refresh(); onOpen(); }} className="mt-3 min-h-10 rounded-xl border border-[var(--cyan)]/50 px-3 text-sm font-bold text-[var(--cyan)]">Open Decision Matrix →</button>
+  </section>;
+}
+
 export default function App() {
   const [tab, setTab] = useState<Tab>('mission');
   const [financeInitialTab, setFinanceInitialTab] = useState<'home' | 'pto' | 'schedule'>('schedule');
@@ -171,6 +184,7 @@ export default function App() {
           <Section><RecommendationCard rec={reg} compact onExpand={() => setDetailRec(reg)} label="⚡ EXECUTE NOW" /><RecommendationCard rec={ins} compact onExpand={() => setDetailRec(ins)} variant="decision" label="DECISIONS REQUIRED" /></Section>
           <Section full><RecommendationCard rec={esc} compact onExpand={() => setDetailRec(esc)} variant="risk" label="⚠ AT RISK" /></Section>
           <ReviewQueue items={[{ id: '1', title: 'Review Tax Return Draft', note: 'Example recommendation · due next week' }, { id: '2', title: 'Review Estate Planning Documents', note: 'Example recommendation · last reviewed 18 months ago' }]} />
+          <DecisionReviewQueue onOpen={() => setTab('decisions')} />
         </>)}
         {tab === 'finance' && <PayCommandCenter initialTab={financeInitialTab} />}
         {tab === 'decisions' && <DecisionMatrix />}

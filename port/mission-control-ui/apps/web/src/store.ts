@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DEFAULT_WEIGHTS, type Weights } from './lib/scoring';
+import type { Person } from './lib/capture';
 
 export interface OpenLoop {
   id: string;
@@ -12,6 +13,8 @@ export interface OpenLoop {
 }
 
 interface State {
+  people: Person[];
+  addPerson: (name: string) => void;
   inbox: OpenLoop[];
   archive: OpenLoop[];
   completed: OpenLoop[];
@@ -64,6 +67,7 @@ export function migratePersistedState(persisted: unknown): Partial<State> {
   const old = persisted && typeof persisted === 'object' ? persisted as Record<string, unknown> : {};
   const weights = old.weights && typeof old.weights === 'object' ? old.weights as Weights : DEFAULT_WEIGHTS;
   return {
+    people: Array.isArray(old.people) ? old.people.filter((p): p is Person => !!p && typeof p === 'object' && typeof (p as Person).id === 'string' && typeof (p as Person).name === 'string') : [],
     inbox: normalizeLoops(old.inbox, 'inbox'),
     archive: normalizeLoops(old.archive, 'archive'),
     completed: normalizeLoops(old.completed, 'completed'),
@@ -72,11 +76,20 @@ export function migratePersistedState(persisted: unknown): Partial<State> {
 }
 
 export const useStore = create<State>()(persist((set) => ({
-  inbox: [], archive: [], completed: [], weights: DEFAULT_WEIGHTS,
+  people: [{ id: 'sj', name: 'Sarah Johnson' }], inbox: [], archive: [], completed: [], weights: DEFAULT_WEIGHTS,
+  addPerson: (rawName) => {
+    const name = rawName.trim().replace(/\s+/g, ' ');
+    if (!name) return;
+    set((state) => state.people.some(p => p.name.toLowerCase() === name.toLowerCase()) ? state : { people: [...state.people, { id: makeId(), name }] });
+  },
   capture: (raw, personId) => {
     const text = raw.trim();
     if (!text) return;
-    set((state) => ({ inbox: [{ id: makeId(), text, createdAt: now(), ...(personId ? { personId } : {}) }, ...state.inbox] }));
+    const tags = [...text.matchAll(/(?:^|\\s)@([\\w.-]+)/g)].map(match => match[1].replace(/[._-]+/g, ' ').trim()).filter(Boolean);
+    set((state) => {
+      const newPeople = tags.filter(tag => !state.people.some(p => p.name.toLowerCase() === tag.toLowerCase() || p.name.toLowerCase().replace(/\\s/g, '') === tag.toLowerCase().replace(/\\s/g, ''))).map(name => ({ id: makeId(), name }));
+      return { people: [...state.people, ...newPeople], inbox: [{ id: makeId(), text, createdAt: now(), ...(personId ? { personId } : {}) }, ...state.inbox] };
+    });
   },
   updateById: (id, raw) => {
     const text = raw.trim();

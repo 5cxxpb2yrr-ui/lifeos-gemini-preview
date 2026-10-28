@@ -11,7 +11,6 @@ import { More } from './screens/More';
 import { PayCommandCenter } from './screens/PayCommandCenter';
 import { Search, type Searchable } from './screens/Search';
 import { useStore } from './store';
-import type { Person } from './lib/capture';
 import type { Rec } from './types';
 
 const nba: Rec = { id: 'gp', entity: 'Georgia Power', title: 'Contact Georgia Power', context: 'regarding service transfer.', impact: 92, confidence: 88, actions: ['Call Now', 'Start Online', 'More'], outcome: 'Prevent utility interruption before move.', why: 'Move date approaching in 6 days. No transfer request detected.' };

@@ -3,10 +3,12 @@ on:
   push:
     branches:
       - feat/pto-ledger-and-awards
+      - feat/paycheck-deduction-reconciliation
   pull_request:
     branches:
       - main
       - feat/pto-ledger-and-awards
+      - feat/paycheck-deduction-reconciliation
   workflow_dispatch:
 
 permissions:

@@ -6,8 +6,10 @@ import { useStore, type OpenLoop } from '../store';
 const field = 'min-h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 text-[var(--text)]';
 
 export function Inbox({ people }: { people: Person[] }) {
-  const { inbox, archive, completed, capture, updateById, archiveById, restoreById, completeById, reopenCompletedById } = useStore();
+  const { inbox, archive, completed, capture, addPerson, updateById, archiveById, restoreById, completeById, reopenCompletedById } = useStore();
   const [v, setV] = useState('');
+  const [personName, setPersonName] = useState('');
+  const [personFormOpen, setPersonFormOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const row = (loop: OpenLoop, label: string, onClick: () => void, dim = false) => {
@@ -24,11 +26,18 @@ export function Inbox({ people }: { people: Person[] }) {
   return (
     <section>
       <h2 className="mb-3 text-xl font-semibold">Inbox</h2>
-      <form onSubmit={(e) => { e.preventDefault(); capture(v); setV(''); }} className="mb-4">
+      <form onSubmit={(e) => { e.preventDefault(); capture(v); setV(''); }} className="mb-3">
         <input className={field} value={v} onChange={(e) => setV(e.target.value)} placeholder="Call @Marcus p2 *phone ^mentorship" aria-label="Capture" />
         <CaptureChips parsed={parseCap(v)} people={people} />
         <p className="mt-1.5 text-xs text-[var(--text-2)]">p1–p5 priority · *context · @person · &gt;project · ^goal · #tracker(value)</p>
       </form>
+      <div className="mb-4">
+        <button type="button" onClick={() => setPersonFormOpen(open => !open)} className="min-h-10 rounded-xl border border-[var(--line)] px-3 text-sm font-semibold">＋ Add person</button>
+        {personFormOpen && <form className="mt-2 flex gap-2" onSubmit={(e) => { e.preventDefault(); if (!personName.trim()) return; addPerson(personName); setPersonName(''); setPersonFormOpen(false); }}>
+          <input className={field} aria-label="New person name" value={personName} onChange={(e) => setPersonName(e.target.value)} placeholder="Full name" />
+          <button className="min-h-11 shrink-0 rounded-xl bg-[var(--amber)] px-3 text-sm font-bold text-black" type="submit">Add</button>
+        </form>}
+      </div>
       {inbox.length ? <ul>{inbox.map((loop) => (
         <li key={loop.id} className="mb-2 rounded-[22px] border border-[var(--line)] bg-[var(--surface-1)] p-3">
           {editing === loop.id ? <form onSubmit={(e) => { e.preventDefault(); updateById(loop.id, editValue); setEditing(null); }} className="flex gap-2">

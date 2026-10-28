@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 
 type Tab = 'home' | 'paycheck' | 'plan' | 'year' | 'pto' | 'schedule';
 type ShiftDay = { date: string; regular: number; doubleTime: number; overtime: number; pto: number; epto: number; note: string };
+type Crew = 'E' | 'D';
 const SHIFT_KEY = 'lifeos.financial-command-center.schedule.v1';
 const SHIFT_ANCHOR = new Date(2025, 11, 29, 12);
 const SHIFT_ROTATION = [true, false, false, true, true, false, false, false, true, true, false, false, true, true];
-function defaultShiftDay(dateValue: Date): ShiftDay {
-  const elapsed = Math.floor((new Date(dateValue.getFullYear(), dateValue.getMonth(), dateValue.getDate(), 12).getTime() - SHIFT_ANCHOR.getTime()) / 86400000);
+function defaultShiftDay(dateValue: Date, crew: Crew = 'D'): ShiftDay {
+  const elapsed = Math.floor((new Date(dateValue.getFullYear(), dateValue.getMonth(), dateValue.getDate(), 12).getTime() - SHIFT_ANCHOR.getTime()) / 86400000) + (crew === 'E' ? 7 : 0);
   const index = ((elapsed % 14) + 14) % 14;
   return { date: iso(dateValue), regular: SHIFT_ROTATION[index] ? 12 : 0, doubleTime: 0, overtime: 0, pto: 0, epto: 0, note: '' };
 }
@@ -85,6 +86,7 @@ export function PayCommandCenter({ initialTab = 'schedule' }: { initialTab?: Tab
   const [scheduledShiftHours, setScheduledShiftHours] = useState('12');
   const [periodStart, setPeriodStart] = useState<string>(() => iso(new Date(currentShiftPeriod()[0].date + 'T12:00:00')));
   const [crewPickerOpen, setCrewPickerOpen] = useState(false);
+  const [selectedCrew, setSelectedCrew] = useState<Crew>('D');
   const [shiftDays, setShiftDays] = useState<ShiftDay[]>(() => {
     try { const raw = localStorage.getItem(SHIFT_KEY); if (raw !== null) { const saved = JSON.parse(raw); if (Array.isArray(saved)) { const defaults = currentShiftPeriod(); return defaults.map(day => ({ ...day, ...(saved.find((item: ShiftDay) => item.date === day.date) ?? {}) })); } } } catch { /* use schedule defaults */ }
     return currentShiftPeriod();
@@ -94,9 +96,9 @@ export function PayCommandCenter({ initialTab = 'schedule' }: { initialTab?: Tab
     return Array.from({ length: 14 }, (_, i) => {
       const d = new Date(start.getTime() + i * 86400000);
       const key = iso(d);
-      return shiftDays.find(day => day.date === key) ?? defaultShiftDay(d);
+      return shiftDays.find(day => day.date === key) ?? defaultShiftDay(d, selectedCrew);
     });
-  }, [periodStart, shiftDays]);
+  }, [periodStart, shiftDays, selectedCrew]);
   const movePayPeriod = (amount: number) => {
     const d = new Date(periodStart + 'T12:00:00');
     d.setDate(d.getDate() + amount * 14);
@@ -351,7 +353,7 @@ export function PayCommandCenter({ initialTab = 'schedule' }: { initialTab?: Tab
       <div className={card + ' border-[var(--amber)]/40'}><div className="flex items-start justify-between gap-3"><div><h3 className="font-bold">14-day shift & pay planner</h3><p className="mt-1 text-xs text-[var(--text-2)]">Rotation defaults · 6:00 AM–6:30 PM · 30-minute unpaid lunch · 12 paid hours per scheduled shift.</p></div><button type="button" className={button} onClick={resetShiftPeriod}>Reset</button></div><div className="mt-4 grid grid-cols-2 gap-3"><div><p className="text-xs text-[var(--text-2)]">ESTIMATED GROSS</p><p className="mt-1 text-xl font-extrabold text-[var(--amber)]">{money(shiftGrossEstimate)}</p><p className="text-[10px] text-[var(--text-2)]">Before taxes and deductions</p></div><div><p className="text-xs text-[var(--text-2)]">PAID HOURS</p><p className="mt-1 text-xl font-extrabold">{(shiftTotals.regular+shiftTotals.doubleTime+shiftTotals.overtime+shiftTotals.pto+shiftTotals.epto).toFixed(2)} h</p><p className="text-[10px] text-[var(--text-2)]">Rate used: {money(shiftRate)}/hr</p></div></div><div className="mt-3 grid grid-cols-2 gap-2 text-xs"><p>Regular <b>{shiftTotals.regular} h</b></p><p>Double time <b>{shiftTotals.doubleTime} h</b></p><p>Overtime <b>{shiftTotals.overtime} h</b></p><p>PTO / EPTO <b>{shiftTotals.pto + shiftTotals.epto} h</b></p></div><p className="mt-3 text-[10px] text-[var(--text-2)]">Estimate assumes double time = 2× base rate and overtime = 1.5×. Confirm Kia's rules before relying on the projection. This schedule is separate from the PTO ledger.</p></div>
       <div className="rounded-2xl border-2 border-[#20324d] bg-[#090d1b] p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="relative"><button type="button" aria-expanded={crewPickerOpen} onClick={()=>setCrewPickerOpen(open=>!open)} className="rounded-xl border-2 border-[#6b432f] bg-[#202a3b] px-4 py-3 text-xl font-black tracking-wide text-[#ff9138]">D Crew (Luther) ▾</button>{crewPickerOpen&&<div className="absolute left-0 top-full z-20 mt-2 min-w-48 rounded-xl border border-[#34435d] bg-[#151b2b] p-3 text-sm text-white shadow-xl"><p className="mb-2 text-xs uppercase tracking-wider text-slate-400">Selected crew</p><button type="button" className="w-full rounded-lg border border-cyan-400 px-3 py-2 text-left font-bold text-cyan-300" onClick={()=>setCrewPickerOpen(false)}>✓ D Crew (Luther)</button><p className="mt-2 text-xs text-slate-500">Crew selection is ready for additional crew rotations.</p></div>}</div>
+          <div className="relative"><button type="button" aria-expanded={crewPickerOpen} onClick={()=>setCrewPickerOpen(open=>!open)} className="rounded-xl border-2 border-[#6b432f] bg-[#202a3b] px-4 py-3 text-xl font-black tracking-wide text-[#ff9138]">{selectedCrew} Crew ({selectedCrew === 'E' ? 'Jason' : 'Luther'}) ▾</button>{crewPickerOpen&&<div className="absolute left-0 top-full z-20 mt-2 min-w-52 rounded-xl border border-[#34435d] bg-[#151b2b] p-3 text-sm text-white shadow-xl"><p className="mb-2 text-xs uppercase tracking-wider text-slate-400">Select crew</p><button type="button" aria-pressed={selectedCrew==='E'} className={'mb-2 w-full rounded-lg border px-3 py-2 text-left font-bold '+(selectedCrew==='E'?'border-cyan-400 text-cyan-300':'border-slate-600 text-slate-300')} onClick={()=>{setSelectedCrew('E');setCrewPickerOpen(false);}}>{selectedCrew==='E'?'✓ ':' '}E Crew (Jason)</button><button type="button" aria-pressed={selectedCrew==='D'} className={'w-full rounded-lg border px-3 py-2 text-left font-bold '+(selectedCrew==='D'?'border-cyan-400 text-cyan-300':'border-slate-600 text-slate-300')} onClick={()=>{setSelectedCrew('D');setCrewPickerOpen(false);}}>{selectedCrew==='D'?'✓ ':' '}D Crew (Luther)</button><p className="mt-2 text-xs text-slate-500">E Crew’s default rotation is offset 7 days from D Crew.</p></div>}</div>
           <div className="flex items-center gap-3 sm:gap-6"><button type="button" aria-label="Previous pay period" className="px-2 text-4xl font-bold text-slate-400 hover:text-white" onClick={()=>movePayPeriod(-1)}>←</button><div className="min-w-0 text-center"><h3 className="text-2xl font-black tracking-[.08em] text-white sm:text-4xl">PP-{Math.floor((new Date(periodStart+'T12:00:00').getTime()-new Date('2026-01-05T12:00:00').getTime())/(14*86400000))+1}/2026</h3><p className="mt-1 text-lg font-extrabold uppercase tracking-wide text-cyan-400 sm:text-2xl">{new Date(visibleShiftDays[0].date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})} - {new Date(visibleShiftDays[13].date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</p></div><button type="button" aria-label="Next pay period" className="px-2 text-4xl font-bold text-slate-400 hover:text-white" onClick={()=>movePayPeriod(1)}>→</button></div>
         </div>
         <div className="mt-8 grid grid-cols-7 border-b-2 border-[#202b40] pb-3 text-center text-xs font-black tracking-wider text-slate-500 sm:text-xl">{['MON','TUE','WED','THU','FRI','SAT','SUN'].map((d,i)=><div key={d} className={i===6?'text-red-500':''}>{d}</div>)}</div>

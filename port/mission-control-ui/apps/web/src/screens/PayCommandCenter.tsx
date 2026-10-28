@@ -4,6 +4,7 @@ type Tab = 'home' | 'paycheck' | 'plan' | 'year' | 'pto' | 'schedule';
 type ShiftDay = { date: string; regular: number; doubleTime: number; overtime: number; pto: number; epto: number; note: string };
 type Crew = 'E' | 'D';
 const SHIFT_KEY = 'lifeos.financial-command-center.schedule.v1';
+const CREW_KEY = 'lifeos.financial-command-center.selected-crew.v1';
 const SHIFT_ANCHOR = new Date(2025, 11, 29, 12);
 const SHIFT_ROTATION = [true, false, false, true, true, false, false, false, true, true, false, false, true, true];
 function normalizeSundayShift(day: ShiftDay): ShiftDay {
@@ -91,7 +92,7 @@ export function PayCommandCenter({ initialTab = 'schedule' }: { initialTab?: Tab
   const [scheduledShiftHours, setScheduledShiftHours] = useState('12');
   const [periodStart, setPeriodStart] = useState<string>(() => iso(new Date(currentShiftPeriod()[0].date + 'T12:00:00')));
   const [crewPickerOpen, setCrewPickerOpen] = useState(false);
-  const [selectedCrew, setSelectedCrew] = useState<Crew>('D');
+  const [selectedCrew, setSelectedCrew] = useState<Crew>(() => { try { const saved = localStorage.getItem(CREW_KEY); return saved === 'E' || saved === 'D' ? saved : 'D'; } catch { return 'D'; } });
   const [shiftDays, setShiftDays] = useState<ShiftDay[]>(() => {
     try { const raw = localStorage.getItem(SHIFT_KEY); if (raw !== null) { const saved = JSON.parse(raw); if (Array.isArray(saved)) { const defaults = currentShiftPeriod(); return defaults.map(day => normalizeSundayShift({ ...day, ...(saved.find((item: ShiftDay) => item.date === day.date) ?? {}) })); } } } catch { /* use schedule defaults */ }
     return currentShiftPeriod();
@@ -128,6 +129,7 @@ export function PayCommandCenter({ initialTab = 'schedule' }: { initialTab?: Tab
   useEffect(() => { localStorage.setItem(KEY, JSON.stringify(data)); }, [data]);
   useEffect(() => { localStorage.setItem(PTO_KEY, JSON.stringify(ptoEntries)); }, [ptoEntries]);
   useEffect(() => { localStorage.setItem(SHIFT_KEY, JSON.stringify(shiftDays)); }, [shiftDays]);
+  useEffect(() => { try { localStorage.setItem(CREW_KEY, selectedCrew); } catch { /* retain the selection for this session */ } }, [selectedCrew]);
   const selectedShift = shiftDays.find(day => day.date === selectedShiftDate) ?? null;
   const shiftTotals = visibleShiftDays.reduce((sum, day) => ({ regular: sum.regular + day.regular, doubleTime: sum.doubleTime + day.doubleTime, overtime: sum.overtime + day.overtime, pto: sum.pto + day.pto, epto: sum.epto + day.epto }), { regular: 0, doubleTime: 0, overtime: 0, pto: 0, epto: 0 });
   const saveShiftDraft = (event: FormEvent) => { event.preventDefault(); if (!shiftDraft) return; const hours = [shiftDraft.regular, shiftDraft.doubleTime, shiftDraft.overtime, shiftDraft.pto, shiftDraft.epto]; if (hours.some(value => !Number.isFinite(value) || value < 0 || value > 24)) { setNotice('Each hour category must be between 0 and 24.'); return; } if (hours.reduce((a, b) => a + b, 0) > 24) { setNotice('Combined paid-hour categories cannot exceed 24 hours in one day.'); return; } const normalizedDraft = normalizeSundayShift(shiftDraft); setShiftDays(days => days.map(day => day.date === normalizedDraft.date ? normalizedDraft : day)); setSelectedShiftDate(null); setShiftDraft(null); setNotice('Shift hours saved locally.'); };

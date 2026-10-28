@@ -8,6 +8,8 @@ on:
       - "src/**"
       - "port/mission-control-ui/apps/web/src/screens/PayCommandCenter.tsx"
       - "port/mission-control-ui/apps/web/src/App.tsx"
+      - "port/mission-control-ui/apps/web/src/store.ts"
+      - "port/mission-control-ui/apps/web/src/screens/Inbox.tsx"
       - "port/mission-control-ui/apps/web/src/components/BottomNavigation.tsx"
       - "port/mission-control-ui/apps/web/src/theme/**"
       - "pay-command-center.html"

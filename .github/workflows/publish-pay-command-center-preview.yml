@@ -1,0 +1,79 @@
+name: Publish Pay Command Center isolated preview
+
+on:
+  push:
+    branches:
+      - feat/paycheck-deduction-reconciliation
+    paths:
+      - "src/**"
+      - "port/mission-control-ui/apps/web/src/screens/PayCommandCenter.tsx"
+      - "port/mission-control-ui/apps/web/src/theme/**"
+      - "pay-command-center.html"
+      - "vite.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/publish-pay-command-center-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pay-command-center-preview
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          ref: feat/paycheck-deduction-reconciliation
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm run test:ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build both pages
+        run: |
+          npm run build
+          test -s dist/pay-command-center.html
+          test -s dist/index.html
+          test -d dist/assets
+
+      - name: Check out isolated Pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: audit/mission-control-port-20261024
+          path: preview-site
+          persist-credentials: true
+
+      - name: Add Pay Command Center page without replacing existing site
+        run: |
+          set -euo pipefail
+          test -s dist/pay-command-center.html
+          mkdir -p preview-site/assets
+          cp dist/pay-command-center.html preview-site/pay-command-center.html
+          cp dist/assets/* preview-site/assets/
+          cd preview-site
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pay-command-center.html assets
+          if git diff --cached --quiet; then
+            echo "Pay Command Center preview is already current."
+            exit 0
+          fi
+          git commit -m "Publish validated Pay Command Center preview"
+          git push origin HEAD:audit/mission-control-port-20261024

@@ -96,6 +96,7 @@ export function PayCommandCenter({ initialTab = 'schedule' }: { initialTab?: Tab
     return Array.from({ length: 14 }, (_, i) => {
       const d = new Date(start.getTime() + i * 86400000);
       const key = iso(d);
+      if (selectedCrew === 'E' && (key === '2026-10-29' || key === '2026-10-30')) return defaultShiftDay(d, 'E');
       return shiftDays.find(day => day.date === key) ?? defaultShiftDay(d, selectedCrew);
     });
   }, [periodStart, shiftDays, selectedCrew]);

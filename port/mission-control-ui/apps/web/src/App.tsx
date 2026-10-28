@@ -28,7 +28,7 @@ const entities: Entity[] = [
 
 type DecisionCriterion = { id: string; name: string; weight: number; direction: 'higher' | 'lower' };
 type DecisionOption = { id: string; name: string; scores: Record<string, number> };
-type DecisionFrame = { id: string; title: string; objective: string; criteria: DecisionCriterion[]; options: DecisionOption[]; updatedAt: string; status?: 'evaluating' | 'decided' | 'reviewed'; chosenOptionId?: string; decisionRationale?: string; decidedAt?: string; reviewDate?: string; actualOutcome?: string; outcomeRating?: 'better' | 'as-expected' | 'worse' };
+type DecisionFrame = { id: string; title: string; objective: string; criteria: DecisionCriterion[]; options: DecisionOption[]; updatedAt: string; status?: 'evaluating' | 'decided' | 'reviewed'; chosenOptionId?: string; decisionRationale?: string; decidedAt?: string; reviewDate?: string; actualOutcome?: string; outcomeRating?: 'better' | 'as-expected' | 'worse'; linkedLoopId?: string };
 const decisionKey = 'lifeos.decision-matrix.v1';
 const seedFrame = (): DecisionFrame => {
   const criteria: DecisionCriterion[] = [
@@ -56,6 +56,8 @@ function scoreDecision(frame: DecisionFrame, option: DecisionOption) {
   return Math.round(weighted * 100) / 100;
 }
 function DecisionMatrix() {
+  const openLoops = useStore(state => state.inbox);
+  const captureLoop = useStore(state => state.capture);
   const [frames, setFrames] = useState<DecisionFrame[]>(loadDecisionFrames);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showEditor, setShowEditor] = useState(false);
@@ -81,6 +83,16 @@ function DecisionMatrix() {
       {showEditor && <div className="space-y-3 rounded-2xl border border-[var(--line)] p-3"><div className="flex items-center justify-between"><h3 className="font-bold">Criteria & weights</h3><button onClick={addCriterion} className="text-sm font-bold text-[var(--cyan)]">＋ Criterion</button></div><p className="text-xs text-[var(--text-2)]">Weights are relative; scores are 1–5. Lower is better for criteria marked “lower”.</p>{active.criteria.map(cr=><div key={cr.id} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_84px_120px]"><input value={cr.name} onChange={e=>updateCriterion(cr.id,{name:e.target.value})} className="min-h-10 rounded-lg border border-[var(--line)] bg-[var(--bg)] px-2"/><label className="text-xs text-[var(--text-2)]">Weight %<input type="number" min="0" max="100" value={cr.weight} onChange={e=>updateCriterion(cr.id,{weight:Math.max(0,Number(e.target.value)||0)})} className="min-h-10 w-full rounded-lg border border-[var(--line)] bg-[var(--bg)] px-2"/></label><select value={cr.direction} onChange={e=>updateCriterion(cr.id,{direction:e.target.value as 'higher'|'lower'})} className="min-h-10 rounded-lg border border-[var(--line)] bg-[var(--bg)] px-2"><option value="higher">Higher is better</option><option value="lower">Lower is better</option></select></div>)}
       <div className="flex items-center justify-between pt-2"><h3 className="font-bold">Options</h3><button onClick={addOption} className="text-sm font-bold text-[var(--cyan)]">＋ Add option</button></div>{active.options.map(o=><input key={o.id} value={o.name} onChange={e=>updateOption(o.id,{name:e.target.value})} className="min-h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3"/>)}</div>}
       <div><h3 className="mb-3 font-bold">Weighted scorecard</h3><div className="space-y-4">{active.options.map(o=><div key={o.id} className="rounded-2xl border border-[var(--line)] p-3"><div className="mb-3 flex items-center justify-between gap-3"><strong>{o.name||'Unnamed option'}</strong><span className="text-xl font-extrabold text-[var(--cyan)]">{scoreDecision(active,o).toFixed(2)} <small className="text-xs text-[var(--text-2)]">/ 5</small></span></div>{active.criteria.map(cr=><label key={cr.id} className="mb-3 block text-sm"><span className="flex justify-between gap-2"><span>{cr.name} <small className="text-[var(--text-2)]">· {cr.weight}% · {cr.direction==='lower'?'lower wins':'higher wins'}</small></span><b>{o.scores[cr.id]??3}/5</b></span><input aria-label={o.name+' '+cr.name+' score'} type="range" min="1" max="5" step="1" value={o.scores[cr.id]??3} onChange={e=>updateScore(o.id,cr.id,Number(e.target.value))} className="w-full accent-cyan-400"/></label>)}</div>)}</div></div>
+      <div className="space-y-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
+        <div><p className="text-xs font-bold uppercase tracking-widest text-[var(--cyan)]">LifeOS execution link</p><h3 className="mt-1 text-lg font-bold">Turn the decision into action</h3><p className="text-sm text-[var(--text-2)]">Link this decision to an existing open loop, or create a follow-up in Inbox. This does not automatically complete the task.</p></div>
+        <label className="block text-sm font-semibold text-[var(--text-2)]">Linked open loop
+          <select value={active.linkedLoopId ?? ''} onChange={e=>patchActive({linkedLoopId:e.target.value || undefined})} className="mt-1 min-h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 text-[var(--text)]">
+            <option value="">No open loop linked</option>{openLoops.map(loop=><option key={loop.id} value={loop.id}>{loop.text}</option>)}
+          </select>
+        </label>
+        <button onClick={()=>{const chosen=active.options.find(o=>o.id===active.chosenOptionId);const text='Follow up: '+(active.title||'Decision')+(chosen?' — implement '+chosen.name:' — act on decision');captureLoop(text);const created=useStore.getState().inbox[0];if(created)patchActive({linkedLoopId:created.id});}} className="min-h-11 w-full rounded-xl border border-[var(--cyan)]/60 px-4 font-bold text-[var(--cyan)]">＋ Create follow-up in Inbox</button>
+        {active.linkedLoopId && <p className="text-xs text-[var(--text-2)]">Linked: {openLoops.find(loop=>loop.id===active.linkedLoopId)?.text ?? 'The linked loop is no longer open (it may be completed or archived).'}</p>}
+      </div>
       <div className="space-y-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
         <div><p className="text-xs font-bold uppercase tracking-widest text-[var(--cyan)]">Decision record</p><h3 className="mt-1 text-lg font-bold">Commit, then learn</h3><p className="text-sm text-[var(--text-2)]">Record what you chose and why. Revisit the result on the review date.</p></div>
         <label className="block text-sm font-semibold text-[var(--text-2)]">Chosen option

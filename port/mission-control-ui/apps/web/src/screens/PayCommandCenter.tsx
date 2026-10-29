@@ -175,6 +175,39 @@ export function PayCommandCenter({ initialTab = 'schedule' }: { initialTab?: Tab
   const deductionLineTotal = enteredDeductionItems.reduce((sum, item) => sum + (item.amount ?? 0), 0);
   const deductionsComplete = deductionItems.length > 0 && enteredDeductionItems.length === deductionItems.length;
   const deductionDifference = detailDraft ? deductionLineTotal - detailDraft.deductions : 0;
+  const auditYear = new Date().getFullYear();
+  const annualDeductionAudit = useMemo(() => {
+    const yearChecks = checks.filter(check => check.payDate.slice(0, 4) === String(auditYear));
+    const rows = yearChecks.flatMap(check => (check.lineItems ?? [])
+      .filter(item => ['preTax', 'postTax', 'deductions'].includes(item.section))
+      .map(item => ({ check, item })));
+    const verified = rows.filter(({ item }) => typeof item.amount === 'number' && Number.isFinite(item.amount));
+    const sumSection = (section: PayLineItem['section']) => verified
+      .filter(({ item }) => item.section === section)
+      .reduce((sum, { item }) => sum + (item.amount ?? 0), 0);
+    const checksWithRows = yearChecks.filter(check => (check.lineItems ?? []).some(item => ['preTax', 'postTax', 'deductions'].includes(item.section)));
+    const reconciledChecks = checksWithRows.filter(check => {
+      const items = (check.lineItems ?? []).filter(item => ['preTax', 'postTax', 'deductions'].includes(item.section));
+      return items.length > 0 && items.every(item => typeof item.amount === 'number' && Number.isFinite(item.amount));
+    });
+    const varianceChecks = reconciledChecks.filter(check => {
+      const total = (check.lineItems ?? []).filter(item => ['preTax', 'postTax', 'deductions'].includes(item.section))
+        .reduce((sum, item) => sum + (item.amount ?? 0), 0);
+      return Math.abs(total - check.deductions) > 0.02;
+    });
+    return {
+      paycheckCount: yearChecks.length,
+      rowCount: rows.length,
+      verifiedCount: verified.length,
+      missingCount: rows.length - verified.length,
+      preTax: sumSection('preTax'),
+      postTax: sumSection('postTax'),
+      unclassified: sumSection('deductions'),
+      reconciledCount: reconciledChecks.length,
+      varianceCount: varianceChecks.length,
+      variancePayDates: varianceChecks.map(check => check.payDate),
+    };
+  }, [checks, auditYear]);
   const sectionItems = detailItems.filter(item => item.section === detailTab);
   const sectionEnteredItems = sectionItems.filter(item => typeof item.amount === 'number' && Number.isFinite(item.amount));
   const sectionTotal = sectionEnteredItems.reduce((sum, item) => sum + (item.amount ?? 0), 0);
@@ -384,6 +417,22 @@ export function PayCommandCenter({ initialTab = 'schedule' }: { initialTab?: Tab
       <div className="grid grid-cols-2 gap-3">{([['YTD gross',totals.gross],['YTD net',totals.net],['Taxes recorded',totals.taxes],['Deductions recorded',totals.deductions],['Double pay',totals.doublePay],['Overtime',totals.overtime]] as [string,number][]).map(([l,v])=><div className={card} key={l}><p className="text-xs text-[var(--text-2)]">{l.toUpperCase()}</p><p className="mt-2 text-xl font-bold">{money(v)}</p></div>)}</div>
       <div className={card}><h3 className="font-bold">History coverage</h3><p className="mt-1 text-sm text-[var(--text-2)]">{checks.length} paycheck records · sums shown are only the records imported here, not employer YTD totals.</p>{checks.length>0&&<div className="mt-3 space-y-2">{checks.map(c=><div key={c.id} className="flex justify-between gap-2 border-t border-[var(--line)] pt-2 text-sm"><span>{date(c.payDate)}</span><span>{money(c.gross)} gross</span><b>{money(c.net)}</b></div>)}</div>}</div>
       {latest?.reportedYtd && <div className={card}><h3 className="font-bold">Latest employer-reported YTD</h3><p className="mt-1 text-xs text-[var(--text-2)]">Reported on the latest imported paystub dated {date(latest.payDate)}. This is kept separate from calculated sums.</p><div className="mt-3 grid grid-cols-2 gap-3 text-sm"><p>Gross <b>{money(latest.reportedYtd.gross)}</b></p><p>Net <b>{money(latest.reportedYtd.net)}</b></p><p>Taxes <b>{money(latest.reportedYtd.taxes)}</b></p><p>Deductions <b>{money(latest.reportedYtd.deductions)}</b></p></div><p className="mt-3 text-xs text-[var(--text-2)]">Imported-check sum vs reported YTD — gross {money(totals.gross-latest.reportedYtd.gross)}, net {money(totals.net-latest.reportedYtd.net)}. Any difference needs investigation before forecasting.</p></div>}
+      <div className={card}>
+        <h3 className="font-bold">{auditYear} deduction audit</h3>
+        <p className="mt-1 text-xs text-[var(--text-2)]">Only explicitly verified current-period line amounts are included. This is separate from employer-reported YTD figures and does not treat missing amounts as zero.</p>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <div><p className="text-xs text-[var(--text-2)]">Verified pre-tax</p><p className="text-lg font-bold">{money(annualDeductionAudit.preTax)}</p></div>
+          <div><p className="text-xs text-[var(--text-2)]">Verified post-tax</p><p className="text-lg font-bold">{money(annualDeductionAudit.postTax)}</p></div>
+          <div><p className="text-xs text-[var(--text-2)]">Verified unclassified</p><p className="text-lg font-bold">{money(annualDeductionAudit.unclassified)}</p></div>
+          <div><p className="text-xs text-[var(--text-2)]">Line amounts entered</p><p className="text-lg font-bold">{annualDeductionAudit.verifiedCount} / {annualDeductionAudit.rowCount}</p></div>
+        </div>
+        <div className="mt-3 rounded-xl border border-[var(--line)] p-3 text-sm">
+          <p>{annualDeductionAudit.paycheckCount} paychecks dated in {auditYear} · {annualDeductionAudit.missingCount} deduction line amounts still missing.</p>
+          <p className="mt-1">{annualDeductionAudit.reconciledCount} paychecks have complete deduction lines; {annualDeductionAudit.varianceCount} of those differ from the reported deduction total by more than $0.02.</p>
+          {annualDeductionAudit.variancePayDates.length > 0 && <p className="mt-2 text-xs text-[var(--critical)]">Check dates to review: {annualDeductionAudit.variancePayDates.map(value => date(value)).join(', ')}.</p>}
+          {annualDeductionAudit.rowCount === 0 && <p className="mt-2 text-xs text-[var(--text-2)]">No deduction line items recorded for this year yet. Add verified amounts in Paycheck → open a check → deduction section.</p>}
+        </div>
+      </div>
       <div className={card}><h3 className="font-bold">Year-end projection</h3><p className="mt-1 text-xs text-[var(--text-2)]">Projection stays unavailable until enough dated paycheck records exist. This prevents a single check or stale hardcoded number from being presented as a forecast.</p>{checks.length>=3&&<p className="mt-2 text-sm">Average recorded net per check: <b>{money(totals.net/checks.length)}</b>. This is a historical average, not a guaranteed future deposit.</p>}</div>
     </>}
 

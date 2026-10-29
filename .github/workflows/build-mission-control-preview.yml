@@ -27,7 +27,7 @@ jobs:
       - name: Checkout isolated feature branch
         uses: actions/checkout@v4
         with:
-          ref: feat/pto-ledger-and-awards
+          ref: feat/paycheck-deduction-reconciliation
       - name: Set up Node
         uses: actions/setup-node@v4
         with:

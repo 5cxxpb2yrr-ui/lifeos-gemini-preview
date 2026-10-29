@@ -83,6 +83,7 @@ const label = 'mb-1 block text-xs text-[var(--text-2)]';
 
 export function PayCommandCenter({ initialTab = 'schedule' }: { initialTab?: Tab }) {
   const [tab, setTab] = useState<Tab>(initialTab);
+  const [auditYear, setAuditYear] = useState(new Date().getFullYear());
   const [ptoEntries, setPtoEntries] = useState<PtoEntry[]>(() => { try { const raw = localStorage.getItem(PTO_KEY); if (raw !== null) { const value = JSON.parse(raw); return Array.isArray(value) ? value as PtoEntry[] : []; } return [...IMPORTED_PTO_ENTRIES]; } catch { return [...IMPORTED_PTO_ENTRIES]; } });
   const [ptoYear, setPtoYear] = useState(new Date().getFullYear());
   const [ptoKind, setPtoKind] = useState<PtoKind>('used');
@@ -175,7 +176,6 @@ export function PayCommandCenter({ initialTab = 'schedule' }: { initialTab?: Tab
   const deductionLineTotal = enteredDeductionItems.reduce((sum, item) => sum + (item.amount ?? 0), 0);
   const deductionsComplete = deductionItems.length > 0 && enteredDeductionItems.length === deductionItems.length;
   const deductionDifference = detailDraft ? deductionLineTotal - detailDraft.deductions : 0;
-  const auditYear = new Date().getFullYear();
   const annualDeductionAudit = useMemo(() => {
     const yearChecks = checks.filter(check => check.payDate.slice(0, 4) === String(auditYear));
     const rows = yearChecks.flatMap(check => (check.lineItems ?? [])
@@ -418,7 +418,7 @@ export function PayCommandCenter({ initialTab = 'schedule' }: { initialTab?: Tab
       <div className={card}><h3 className="font-bold">History coverage</h3><p className="mt-1 text-sm text-[var(--text-2)]">{checks.length} paycheck records · sums shown are only the records imported here, not employer YTD totals.</p>{checks.length>0&&<div className="mt-3 space-y-2">{checks.map(c=><div key={c.id} className="flex justify-between gap-2 border-t border-[var(--line)] pt-2 text-sm"><span>{date(c.payDate)}</span><span>{money(c.gross)} gross</span><b>{money(c.net)}</b></div>)}</div>}</div>
       {latest?.reportedYtd && <div className={card}><h3 className="font-bold">Latest employer-reported YTD</h3><p className="mt-1 text-xs text-[var(--text-2)]">Reported on the latest imported paystub dated {date(latest.payDate)}. This is kept separate from calculated sums.</p><div className="mt-3 grid grid-cols-2 gap-3 text-sm"><p>Gross <b>{money(latest.reportedYtd.gross)}</b></p><p>Net <b>{money(latest.reportedYtd.net)}</b></p><p>Taxes <b>{money(latest.reportedYtd.taxes)}</b></p><p>Deductions <b>{money(latest.reportedYtd.deductions)}</b></p></div><p className="mt-3 text-xs text-[var(--text-2)]">Imported-check sum vs reported YTD — gross {money(totals.gross-latest.reportedYtd.gross)}, net {money(totals.net-latest.reportedYtd.net)}. Any difference needs investigation before forecasting.</p></div>}
       <div className={card}>
-        <h3 className="font-bold">{auditYear} deduction audit</h3>
+        <div className="flex items-center justify-between gap-3"><h3 className="font-bold">{auditYear} deduction audit</h3><label className="text-xs text-[var(--text-2)]">Year <select aria-label="Deduction audit year" className="ml-2 min-h-9 rounded-lg border border-[var(--line)] bg-[var(--bg)] px-2 text-[var(--text)]" value={auditYear} onChange={e=>setAuditYear(Number(e.target.value))}>{Array.from({length:9},(_,i)=>new Date().getFullYear()-4+i).map(year=><option key={year} value={year}>{year}</option>)}</select></label></div>
         <p className="mt-1 text-xs text-[var(--text-2)]">Only explicitly verified current-period line amounts are included. This is separate from employer-reported YTD figures and does not treat missing amounts as zero.</p>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <div><p className="text-xs text-[var(--text-2)]">Verified pre-tax</p><p className="text-lg font-bold">{money(annualDeductionAudit.preTax)}</p></div>

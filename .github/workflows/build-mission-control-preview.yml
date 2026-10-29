@@ -62,4 +62,6 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-# CI and Pages deployment intentionally run only for this isolated preview branch.
+# Deployment is initiated only from the designated isolated preview branch.
+# Its build checks out the latest validated calendar feature branch.
+# Feature branch commits never deploy directly to GitHub Pages.

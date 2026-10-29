@@ -1,0 +1,75 @@
+name: Publish Pay Command Center isolated preview
+
+on:
+  push:
+    branches:
+      - feat/paycheck-deduction-reconciliation
+    paths:
+      - "src/**"
+      - "port/mission-control-ui/apps/web/src/screens/PayCommandCenter.tsx"
+      - "port/mission-control-ui/apps/web/src/App.tsx"
+      - "port/mission-control-ui/apps/web/src/store.ts"
+      - "port/mission-control-ui/apps/web/src/screens/Inbox.tsx"
+      - "port/mission-control-ui/apps/web/src/components/BottomNavigation.tsx"
+      - "port/mission-control-ui/apps/web/src/theme/**"
+      - "pay-command-center.html"
+      - "vite.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/publish-pay-command-center-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          ref: feat/paycheck-deduction-reconciliation
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm run test:ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build both pages
+        run: |
+          npm run build
+          test -s dist/pay-command-center.html
+          test -s dist/index.html
+          test -d dist/assets
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload built site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

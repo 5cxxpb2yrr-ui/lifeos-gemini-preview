@@ -24,10 +24,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout validated calendar feature branch
+      - name: Checkout isolated feature branch
         uses: actions/checkout@v4
         with:
-          ref: feat/pto-ledger-and-awards
+          ref: feat/paycheck-deduction-reconciliation
       - name: Set up Node
         uses: actions/setup-node@v4
         with:

@@ -1,4 +1,4 @@
-const TABS = [['mission', '⌂', 'Mission'], ['finance', '$', 'Finance'], ['inbox', '✉', 'Inbox'], ['entities', '⚇', 'Entities'], ['search', '⌕', 'Search'], ['more', '⋯', 'More']] as const;
+const TABS = [['mission', '⌂', 'Mission'], ['inbox', '▣', 'Inbox'], ['decisions', '⑂', 'Decisions'], ['finance', '$', 'Bills'], ['entities', '⚇', 'Entities'], ['search', '⌕', 'Search'], ['more', '⋯', 'More']] as const;
 export type Tab = (typeof TABS)[number][0];
 
 /** Bottom bar on mobile and tablet; vertical rail from lg (1024px). */

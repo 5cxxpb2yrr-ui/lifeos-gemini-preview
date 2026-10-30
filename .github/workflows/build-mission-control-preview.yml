@@ -24,10 +24,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout validated calendar feature branch
+      - name: Checkout the isolated Mission Control branch
         uses: actions/checkout@v4
         with:
-          ref: feat/pto-ledger-and-awards
+          ref: audit/mission-control-port-20261024
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -39,7 +39,7 @@ jobs:
       - name: Upload static preview artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lifeos-gemini-preview-dist
+          name: lifeos-mission-control-preview-dist
           path: dist/
           if-no-files-found: error
           retention-days: 7
@@ -62,6 +62,6 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-# Deployment is initiated only from the designated isolated preview branch.
-# Its build checks out the latest validated calendar feature branch.
-# Feature branch commits never deploy directly to GitHub Pages.
+# This workflow builds and publishes only the isolated Mission Control branch.
+# The checkout ref intentionally matches the triggering branch so successful
+# runs validate the code committed to audit/mission-control-port-20261024.

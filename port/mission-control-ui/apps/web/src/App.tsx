@@ -60,9 +60,18 @@ export default function App() {
       <main className="mx-auto max-w-[860px]">
         {tab === 'mission' && (<>
           <p className="mb-3 rounded-xl border border-[var(--amber)]/40 bg-[var(--surface-1)] px-3 py-2 text-xs text-[var(--text-2)]"><span className="font-bold text-[var(--amber)]">DEMO MODE</span> · Recommendations and sample entities are illustrative only—not live account data or personalized advice. Open loops and their counts below come from your stored LifeOS data.</p>
-          <div className="mb-3"><NextBestActionCard rec={nba} compact onExpand={() => setDetailRec(nba)} /></div>
-          <Section><RecommendationCard rec={reg} compact onExpand={() => setDetailRec(reg)} label="⚡ EXECUTE NOW" /><RecommendationCard rec={ins} compact onExpand={() => setDetailRec(ins)} variant="decision" label="DECISIONS REQUIRED" /></Section>
-          <Section full><RecommendationCard rec={esc} compact onExpand={() => setDetailRec(esc)} variant="risk" label="⚠ AT RISK" /></Section>
+          {inbox.length > 0 ? <div className="mb-3 rounded-2xl border border-[var(--blue)]/50 bg-gradient-to-b from-[#12244a] to-[var(--surface-1)] p-3 shadow-[0_0_20px_#3B82F622]">
+            <p className="mb-1 text-[10px] font-bold tracking-wide text-[var(--blue)]">✦ NEXT OPEN LOOP</p>
+            <p className="text-[11px] text-[var(--text-3)]">From your stored LifeOS inbox</p>
+            <h2 className="text-base font-semibold leading-snug">{inbox[0].text}</h2>
+            <button onClick={() => { setFocusedLoopId(inbox[0].id); setTab('inbox'); }} className="mt-3 min-h-10 rounded-xl bg-[var(--blue)] px-4 text-sm font-semibold text-white">Open this loop</button>
+          </div> : <div className="mb-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-1)] p-4">
+            <p className="text-[10px] font-bold tracking-wide text-[var(--blue)]">✦ NEXT BEST ACTION</p>
+            <h2 className="mt-1 text-base font-semibold">Capture what needs your attention</h2>
+            <p className="mt-1 text-sm text-[var(--text-2)]">Mission Control will show your open loops here. No invented tasks or recommendations.</p>
+            <button onClick={() => setCaptureOpen(true)} className="mt-3 min-h-10 rounded-xl bg-[var(--amber)] px-4 text-sm font-bold text-black">＋ Capture a loop</button>
+          </div>}
+          <p className="mb-3 rounded-xl border border-[var(--line)] px-3 py-2 text-xs text-[var(--text-2)]">Live view · Open-loop records and counts below come from your stored LifeOS data. Resolver-backed recommendations will be added when the required facts and rules are available.</p>
           <section className="mb-3 grid grid-cols-3 gap-2" aria-label="Mission status">
             <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-1)] p-3"><p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-2)]">Open loops</p><p className="mt-1 text-2xl font-bold">{inbox.length}</p></div>
             <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-1)] p-3"><p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-2)]">Completed</p><p className="mt-1 text-2xl font-bold">{completed.length}</p></div>

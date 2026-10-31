@@ -8,14 +8,6 @@ import App from '../App';
 import { useStore } from '../store';
 
 describe('screens render', () => {
-  it('renders every tab without throwing', () => {
-    expect(renderToString(<Inbox people={[{ id: '1', name: 'Marcus Chen' }]} />)).toContain('Inbox is clear');
-    expect(renderToString(<Entities entities={[{ id: 'a', name: 'Vehicle', type: 'Asset', open: 1 }]} />)).toContain('Vehicle');
-    expect(renderToString(<Search items={[{ id: 'a', title: 'Pay bill', destination: 'inbox' }]} />)).toContain('Pay bill');
-    expect(renderToString(<More />)).toContain('Scoring weights');
-    expect(renderToString(<App />)).toContain('NEXT BEST ACTION');
-  });
-
   it('derives Mission Control counts and review items from the store', () => {
     useStore.setState({
       inbox: [{ id: 'loop-1', text: 'Call the utility company', createdAt: '2026-10-30T12:00:00.000Z' }],
@@ -33,5 +25,15 @@ describe('screens render', () => {
       useStore.setState({ inbox: [], completed: [], archive: [] });
     }
   });
+
+  it('renders every tab without throwing', () => {
+    expect(renderToString(<Inbox people={[{ id: '1', name: 'Marcus Chen' }]} />)).toContain('Inbox is clear');
+    expect(renderToString(<Entities entities={[{ id: 'a', name: 'Vehicle', type: 'Asset', open: 1 }]} />)).toContain('Vehicle');
+    expect(renderToString(<Search items={[{ id: 'a', title: 'Pay bill', destination: 'inbox' }]} />)).toContain('Pay bill');
+    expect(renderToString(<More />)).toContain('Scoring weights');
+    expect(renderToString(<App />)).toContain('NEXT BEST ACTION');
+  });
+
+
 
 });

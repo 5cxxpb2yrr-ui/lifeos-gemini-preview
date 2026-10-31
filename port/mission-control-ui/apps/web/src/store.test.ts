@@ -52,4 +52,30 @@ describe('store', () => {
     useStore.getState().resetWeights();
     expect(useStore.getState().weights).toEqual(DEFAULT_WEIGHTS);
   });
+
+  it('preserves one loop through the full open-loop lifecycle', () => {
+    useStore.getState().capture('Renew vehicle registration');
+    const original = useStore.getState().inbox[0];
+    expect(original).toMatchObject({ text: 'Renew vehicle registration', id: expect.any(String), createdAt: expect.any(String) });
+
+    useStore.getState().updateById(original.id, 'Renew vehicle registration online');
+    expect(useStore.getState().inbox[0]).toMatchObject({ id: original.id, text: 'Renew vehicle registration online' });
+
+    useStore.getState().completeById(original.id);
+    expect(useStore.getState().completed[0]).toMatchObject({ id: original.id, completedAt: expect.any(String) });
+
+    useStore.getState().reopenCompletedById(original.id);
+    expect(useStore.getState().inbox[0]).toMatchObject({ id: original.id, text: 'Renew vehicle registration online' });
+    expect(useStore.getState().inbox[0].completedAt).toBeUndefined();
+
+    useStore.getState().archiveById(original.id);
+    expect(useStore.getState().archive[0]).toMatchObject({ id: original.id, archivedAt: expect.any(String) });
+    expect(useStore.getState().inbox.some((loop) => loop.id === original.id)).toBe(false);
+
+    useStore.getState().restoreById(original.id);
+    expect(useStore.getState().inbox[0]).toMatchObject({ id: original.id, text: 'Renew vehicle registration online' });
+    expect(useStore.getState().archive.some((loop) => loop.id === original.id)).toBe(false);
+    expect(useStore.getState().completed.some((loop) => loop.id === original.id)).toBe(false);
+  });
+
 });

@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import './theme/tokens.css';
 import { BottomNavigation, type Tab } from './components/BottomNavigation';
-import { NextBestActionCard } from './components/NextBestActionCard';
-import { RecommendationCard } from './components/RecommendationCard';
 import { ReviewQueue } from './components/ReviewQueue';
 import { Section } from './components/Section';
 import { Entities, type Entity } from './screens/Entities';
@@ -12,12 +10,7 @@ import { PayCommandCenter } from './screens/PayCommandCenter';
 import { Search, type Searchable } from './screens/Search';
 import { useStore } from './store';
 import type { Person } from './lib/capture';
-import type { Rec } from './types';
 
-const nba: Rec = { id: 'gp', entity: 'Georgia Power', title: 'Contact Georgia Power', context: 'regarding service transfer.', impact: 92, confidence: 88, actions: ['Call Now', 'Start Online', 'More'], outcome: 'Prevent utility interruption before move.', why: 'Move date approaching in 6 days. No transfer request detected.' };
-const reg: Rec = { id: 'reg', entity: 'Vehicle', title: 'Renew Vehicle Registration', context: 'Expires in 4 days', impact: 84, confidence: 97, actions: ['Complete'] };
-const ins: Rec = { id: 'ins', entity: 'Insurance', title: 'Choose Insurance Plan', context: 'Enrollment closes in 12 days', recommendation: 'PPO Option', impact: 91, confidence: 82, actions: ['Review Options'] };
-const esc: Rec = { id: 'esc', entity: 'Mortgage servicer', title: 'Mortgage Escrow Shortfall', context: 'Monthly payment may increase by $172.', impact: 96, confidence: 94, actions: ['Review', 'Contact Servicer'] };
 const people: Person[] = [{ id: 'sj', name: 'Sarah Johnson' }];
 const entities: Entity[] = [
   { id: 'sj', name: 'Sarah Johnson', type: 'Person', open: 1 }, { id: 'veh', name: 'Vehicle', type: 'Asset', open: 1 },
@@ -30,11 +23,9 @@ export default function App() {
   const [financeInitialTab, setFinanceInitialTab] = useState<'home' | 'pto' | 'schedule'>('schedule');
   const [draft, setDraft] = useState('');
   const [captureOpen, setCaptureOpen] = useState(false);
-  const [detailRec, setDetailRec] = useState<Rec | null>(null);
   const [focusedLoopId, setFocusedLoopId] = useState<string | null>(null);
   const { inbox, archive, completed, capture } = useStore();
   const searchable: Searchable[] = [
-    ...[nba, reg, ins, esc].map((r) => ({ id: `rec-${r.id}`, title: r.title, subtitle: `Example recommendation · ${r.entity}`, destination: 'mission' as const })),
     ...people.map((p) => ({ id: `person-${p.id}`, title: p.name, subtitle: 'Person', destination: 'entities' as const })),
     ...entities.map((entity) => ({ id: `entity-${entity.id}`, title: entity.name, subtitle: `${entity.type} · example data`, destination: 'entities' as const })),
     ...inbox.map((item) => ({ id: `open-${item.id}`, title: item.text, subtitle: 'Open loop', destination: 'inbox' as const })),
@@ -59,7 +50,7 @@ export default function App() {
       </header>
       <main className="mx-auto max-w-[860px]">
         {tab === 'mission' && (<>
-          <p className="mb-3 rounded-xl border border-[var(--amber)]/40 bg-[var(--surface-1)] px-3 py-2 text-xs text-[var(--text-2)]"><span className="font-bold text-[var(--amber)]">DEMO MODE</span> · Recommendations and sample entities are illustrative only—not live account data or personalized advice. Open loops and their counts below come from your stored LifeOS data.</p>
+          <p className="mb-3 rounded-xl border border-[var(--line)] bg-[var(--surface-1)] px-3 py-2 text-xs text-[var(--text-2)]"><span className="font-bold text-[var(--amber)]">LIVE OPEN LOOPS</span> · The action below is selected from your stored inbox. Sample entities remain illustrative.</p>
           {inbox.length > 0 ? <div className="mb-3 rounded-2xl border border-[var(--blue)]/50 bg-gradient-to-b from-[#12244a] to-[var(--surface-1)] p-3 shadow-[0_0_20px_#3B82F622]">
             <p className="mb-1 text-[10px] font-bold tracking-wide text-[var(--blue)]">✦ NEXT OPEN LOOP</p>
             <p className="text-[11px] text-[var(--text-3)]">From your stored LifeOS inbox</p>
@@ -85,15 +76,6 @@ export default function App() {
         {tab === 'search' && <Search items={searchable} onOpen={openSearchResult} />}
         {tab === 'more' && <More />}
       </main>
-      {detailRec && <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/75 p-3 backdrop-blur-sm sm:items-center" onClick={(e) => { if (e.target === e.currentTarget) setDetailRec(null); }}>
-        <section role="dialog" aria-modal="true" aria-labelledby="detail-title" className="max-h-[85dvh] w-full max-w-xl overflow-y-auto rounded-3xl border border-[var(--line)] bg-[var(--surface-1)] p-4 shadow-[0_0_32px_rgba(255,106,0,0.16)]">
-          <div className="mb-3 flex items-center justify-between gap-3"><div><p className="text-xs font-semibold tracking-wide text-[var(--amber)]">MISSION CONTROL DETAILS</p><h2 id="detail-title" className="text-lg font-bold">{detailRec.title}</h2></div><button onClick={() => setDetailRec(null)} aria-label="Close details" className="min-h-10 rounded-xl border border-[var(--line)] px-3">✕</button></div>
-          {detailRec.id === 'gp'
-            ? <NextBestActionCard rec={detailRec} />
-            : <RecommendationCard rec={detailRec} variant={detailRec.id === 'ins' ? 'decision' : detailRec.id === 'esc' ? 'risk' : 'default'} />}
-          <p className="mt-3 text-xs text-[var(--text-3)]">Illustrative demo recommendation — not live account data.</p>
-        </section>
-      </div>}
       {captureOpen && <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 backdrop-blur-sm sm:items-center" onClick={(e) => { if (e.target === e.currentTarget) setCaptureOpen(false); }}>
         <section role="dialog" aria-modal="true" aria-labelledby="capture-title" className="max-h-[85dvh] w-full max-w-xl overflow-y-auto rounded-3xl border border-[var(--line)] bg-[var(--surface-1)] p-4 shadow-[0_0_32px_rgba(255,106,0,0.14)]">
           <div className="mb-3 flex items-center justify-between gap-3"><h2 id="capture-title" className="text-xl font-bold text-[var(--amber)]">Capture & Search</h2><button onClick={() => setCaptureOpen(false)} aria-label="Close capture and search" className="min-h-10 rounded-xl border border-[var(--line)] px-3">✕</button></div>

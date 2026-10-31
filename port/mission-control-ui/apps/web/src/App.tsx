@@ -31,6 +31,7 @@ export default function App() {
   const [draft, setDraft] = useState('');
   const [captureOpen, setCaptureOpen] = useState(false);
   const [detailRec, setDetailRec] = useState<Rec | null>(null);
+  const [focusedLoopId, setFocusedLoopId] = useState<string | null>(null);
   const { inbox, archive, completed, capture } = useStore();
   const searchable: Searchable[] = [
     ...[nba, reg, ins, esc].map((r) => ({ id: `rec-${r.id}`, title: r.title, subtitle: `Example recommendation · ${r.entity}`, destination: 'mission' as const })),
@@ -67,10 +68,10 @@ export default function App() {
             <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-1)] p-3"><p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-2)]">Completed</p><p className="mt-1 text-2xl font-bold">{completed.length}</p></div>
             <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-1)] p-3"><p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-2)]">Archived</p><p className="mt-1 text-2xl font-bold">{archive.length}</p></div>
           </section>
-          <ReviewQueue items={inbox.slice(0, 5).map((item) => ({ id: item.id, title: item.text, note: 'Open loop' }))} onOpen={() => setTab('inbox')} />
+          <ReviewQueue items={inbox.slice(0, 5).map((item) => ({ id: item.id, title: item.text, note: 'Open loop' }))} onOpen={(id) => { setFocusedLoopId(id); setTab('inbox'); }} />
         </>)}
         {tab === 'finance' && <PayCommandCenter initialTab={financeInitialTab} />}
-        {tab === 'inbox' && <Inbox people={people} />}
+        {tab === 'inbox' && <Inbox people={people} focusLoopId={focusedLoopId} />}
         {tab === 'entities' && <Entities entities={entities} />}
         {tab === 'search' && <Search items={searchable} onOpen={openSearchResult} />}
         {tab === 'more' && <More />}

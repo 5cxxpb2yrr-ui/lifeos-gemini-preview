@@ -62,7 +62,12 @@ export default function App() {
           <p className="mb-3 rounded-xl border border-[var(--line)] px-3 py-2 text-xs text-[var(--text-2)]">Demo recommendations below are illustrative examples, not live account data.</p>
           <Section><RecommendationCard rec={reg} compact onExpand={() => setDetailRec(reg)} label="⚡ EXECUTE NOW" /><RecommendationCard rec={ins} compact onExpand={() => setDetailRec(ins)} variant="decision" label="DECISIONS REQUIRED" /></Section>
           <Section full><RecommendationCard rec={esc} compact onExpand={() => setDetailRec(esc)} variant="risk" label="⚠ AT RISK" /></Section>
-          <ReviewQueue items={[{ id: '1', title: 'Review Tax Return Draft', note: 'Example recommendation · due next week' }, { id: '2', title: 'Review Estate Planning Documents', note: 'Example recommendation · last reviewed 18 months ago' }]} />
+          <section className="mb-3 grid grid-cols-3 gap-2" aria-label="Mission status">
+            <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-1)] p-3"><p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-2)]">Open loops</p><p className="mt-1 text-2xl font-bold">{inbox.length}</p></div>
+            <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-1)] p-3"><p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-2)]">Completed</p><p className="mt-1 text-2xl font-bold">{completed.length}</p></div>
+            <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-1)] p-3"><p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-2)]">Archived</p><p className="mt-1 text-2xl font-bold">{archive.length}</p></div>
+          </section>
+          <ReviewQueue items={inbox.slice(0, 5).map((item) => ({ id: item.id, title: item.text, note: 'Open loop' }))} onOpen={() => setTab('inbox')} />
         </>)}
         {tab === 'finance' && <PayCommandCenter initialTab={financeInitialTab} />}
         {tab === 'inbox' && <Inbox people={people} />}

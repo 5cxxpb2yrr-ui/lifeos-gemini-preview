@@ -78,4 +78,27 @@ describe('store', () => {
     expect(useStore.getState().completed.some((loop) => loop.id === original.id)).toBe(false);
   });
 
+
+  it('keeps lifecycle actions safe when repeated or given blank input', () => {
+    useStore.getState().capture('Keep this loop');
+    const loop = useStore.getState().inbox[0];
+
+    useStore.getState().updateById(loop.id, '   ');
+    expect(useStore.getState().inbox[0].text).toBe('Keep this loop');
+
+    useStore.getState().completeById(loop.id);
+    useStore.getState().completeById(loop.id);
+    expect(useStore.getState().completed.filter((item) => item.id === loop.id)).toHaveLength(1);
+    expect(useStore.getState().inbox.some((item) => item.id === loop.id)).toBe(false);
+
+    useStore.getState().restoreById(loop.id);
+    expect(useStore.getState().archive.some((item) => item.id === loop.id)).toBe(false);
+    expect(useStore.getState().inbox.some((item) => item.id === loop.id)).toBe(false);
+
+    useStore.getState().reopenCompletedById(loop.id);
+    useStore.getState().reopenCompletedById(loop.id);
+    expect(useStore.getState().inbox.filter((item) => item.id === loop.id)).toHaveLength(1);
+    expect(useStore.getState().completed.some((item) => item.id === loop.id)).toBe(false);
+  });
+
 });

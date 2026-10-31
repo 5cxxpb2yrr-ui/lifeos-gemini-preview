@@ -5,7 +5,7 @@ import { useStore, type OpenLoop } from '../store';
 
 const field = 'min-h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 text-[var(--text)]';
 
-export function Inbox({ people }: { people: Person[] }) {
+export function Inbox({ people, focusLoopId }: { people: Person[]; focusLoopId?: string | null }) {
   const { inbox, archive, completed, capture, updateById, archiveById, restoreById, completeById, reopenCompletedById } = useStore();
   const [v, setV] = useState('');
   const [editing, setEditing] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export function Inbox({ people }: { people: Person[] }) {
         <p className="mt-1.5 text-xs text-[var(--text-2)]">p1–p5 priority · *context · @person · &gt;project · ^goal · #tracker(value)</p>
       </form>
       {inbox.length ? <ul>{inbox.map((loop) => (
-        <li key={loop.id} className="mb-2 rounded-[22px] border border-[var(--line)] bg-[var(--surface-1)] p-3">
+        <li key={loop.id} data-loop-id={loop.id} className={`mb-2 rounded-[22px] border bg-[var(--surface-1)] p-3 ${focusLoopId === loop.id ? 'border-[var(--amber)] shadow-[0_0_20px_#ff6a0030]' : 'border-[var(--line)]'}`}>
           {editing === loop.id ? <form onSubmit={(e) => { e.preventDefault(); updateById(loop.id, editValue); setEditing(null); }} className="flex gap-2">
             <input autoFocus className={field} aria-label="Edit open loop" value={editValue} onChange={(e) => setEditValue(e.target.value)} />
             <button className="min-h-10 rounded-xl bg-[var(--amber)] px-3 text-sm font-bold text-black" type="submit">Save</button>

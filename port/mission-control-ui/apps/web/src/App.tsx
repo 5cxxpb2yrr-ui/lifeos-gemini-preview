@@ -59,8 +59,8 @@ export default function App() {
       </header>
       <main className="mx-auto max-w-[860px]">
         {tab === 'mission' && (<>
+          <p className="mb-3 rounded-xl border border-[var(--amber)]/40 bg-[var(--surface-1)] px-3 py-2 text-xs text-[var(--text-2)]"><span className="font-bold text-[var(--amber)]">DEMO MODE</span> · Recommendations and sample entities are illustrative only—not live account data or personalized advice. Open loops and their counts below come from your stored LifeOS data.</p>
           <div className="mb-3"><NextBestActionCard rec={nba} compact onExpand={() => setDetailRec(nba)} /></div>
-          <p className="mb-3 rounded-xl border border-[var(--line)] px-3 py-2 text-xs text-[var(--text-2)]">Demo recommendations below are illustrative examples, not live account data.</p>
           <Section><RecommendationCard rec={reg} compact onExpand={() => setDetailRec(reg)} label="⚡ EXECUTE NOW" /><RecommendationCard rec={ins} compact onExpand={() => setDetailRec(ins)} variant="decision" label="DECISIONS REQUIRED" /></Section>
           <Section full><RecommendationCard rec={esc} compact onExpand={() => setDetailRec(esc)} variant="risk" label="⚠ AT RISK" /></Section>
           <section className="mb-3 grid grid-cols-3 gap-2" aria-label="Mission status">

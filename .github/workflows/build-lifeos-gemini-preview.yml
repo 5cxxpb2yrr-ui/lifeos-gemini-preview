@@ -1,6 +1,10 @@
 name: Build isolated LifeOS Gemini preview
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-lifeos-gemini-preview.yml'
   workflow_dispatch:
     inputs:
       publish_preview:
@@ -26,7 +30,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: 5cxxpb2yrr-ui/lifeos-gemini
-          ref: feat/mission-control-integrated-preview
+          ref: compact
           path: source
 
       - name: Set up Node.js
@@ -67,7 +71,7 @@ jobs:
       - name: Upload validated preview artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lifeos-gemini-pr5-preview
+          name: lifeos-gemini-compact-preview
           path: source/apps/web/dist
           if-no-files-found: error
           retention-days: 7
@@ -75,7 +79,7 @@ jobs:
   publish-preview:
     name: Publish to this repository's isolated Pages branch
     needs: build-test
-    if: ${{ inputs.publish_preview == true }}
+    if: ${{ github.event_name == 'push' || inputs.publish_preview == true }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -108,5 +112,5 @@ jobs:
             echo "Preview site already matches validated artifact."
             exit 0
           fi
-          git commit -m "Publish validated LifeOS Gemini PR 5 preview"
+          git commit -m "Publish validated LifeOS Gemini compact preview"
           git push origin HEAD:preview

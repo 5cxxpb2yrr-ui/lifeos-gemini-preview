@@ -12,7 +12,7 @@ on:
         description: "Publish the validated build to this repository's GitHub Pages preview branch"
         required: true
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read

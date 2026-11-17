@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   build-test:
-    name: Build and test source PR without deploying
+    name: Build and test the compact source branch
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -94,7 +94,7 @@ jobs:
       - name: Download validated artifact
         uses: actions/download-artifact@v4
         with:
-          name: lifeos-gemini-pr5-preview
+          name: lifeos-gemini-compact-preview
           path: built-site
 
       - name: Replace only preview branch site files

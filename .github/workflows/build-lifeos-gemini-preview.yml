@@ -59,8 +59,6 @@ jobs:
 
       - name: Build workspace
         working-directory: source
-        env:
-          VITE_NEON_AUTH_URL: https://ep-steep-moon-bec5otr3.neonauth.c-9.us-east-2.aws.neon.tech/neondb/auth
         run: pnpm build
 
       - name: Verify static output

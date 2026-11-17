@@ -1,5 +1,5 @@
 name: Build isolated LifeOS Gemini preview
-# Source of truth for this preview is lifeos-gemini@compact.
+# Source of truth for this preview is lifeos-gemini@compact; publish only after tests and build pass.
 
 on:
   push:

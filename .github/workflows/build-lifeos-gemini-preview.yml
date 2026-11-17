@@ -1,4 +1,5 @@
 name: Build isolated LifeOS Gemini preview
+# Source of truth for this preview is lifeos-gemini@compact.
 
 on:
   push:

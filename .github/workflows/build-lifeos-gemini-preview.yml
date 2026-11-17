@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Check out source repository feature branch
+      - name: Check out source compact branch
         uses: actions/checkout@v4
         with:
           repository: 5cxxpb2yrr-ui/lifeos-gemini
@@ -94,7 +94,7 @@ jobs:
       - name: Download validated artifact
         uses: actions/download-artifact@v4
         with:
-          name: lifeos-gemini-pr5-preview
+          name: lifeos-v3-compact-preview
           path: built-site
 
       - name: Replace only preview branch site files
